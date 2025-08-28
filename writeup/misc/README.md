@@ -48,6 +48,28 @@
 
 ![使用编码恢复工具](./using_code_recover_tool.png)
 
+## weird_photo
+
+> [!NOTE]
+> **FLAG:** `moectf{Image_Height_Restored}`
+
+使用 `pngcheck` 检验 `photo.png` 的 CRC 信息，直接发现问题：
+
+```plain
+┌──(stellalyrin㉿lyrin-A16)-[/mnt/s/MoeCTF/Misc]
+└─$ pngcheck photo.png
+zlib warning:  different version (expected 1.2.13, using 1.3.1)
+
+photo.png  CRC error in chunk IHDR (computed d34d176f, expected b5a7bf8c)
+ERROR: photo.png
+```
+
+这是诡异的。校正 CRC 信息至正确的高度可能有些困难，我们直接尝试部分拉长图片的高度信息。将图片使用 [HexEd.it](https://hexed.it) 打开后，更改第 17 个字节从 `01` 到 `02` 后另存为文件即可得到 `flag`。
+
+![扩大图片以得到 `flag`](./get_flag_in_enlarged_photo.png)
+
+Windows 11 的「照片」应用可以顺利打开被拉伸的图片。其他平台未做测试。
+
 ## SSTV
 
 > [!NOTE]
@@ -131,10 +153,44 @@ Linux 下无法便捷地使用 Audition 等工具，故这里略去截图。
 
 注意到上面显示的是 Standard Galactic Alphabet（星际银河字母），使用 [解码器](https://www.dcode.fr/standard-galactic-alphabet) 即可。
 
+## WebRepo
+
+> [!NOTE]
+> **FLAG:** `moectf{B1NwA1K_ANd_g1t_R3seT-MaG1C}`
+<!---->
+> [!WARNING]
+> 请不要扫描来路不明的二维码。
+
+我们解压并扫描这个来路不明的二维码，得到下面的提示：
+
+> Flag is not here, but I can give you a hint:
+> Use binwalk.
+
+这给了我们极大的提示，使用 `binwalk` 得到：
+
+```plain
+┌──(stellalyrin㉿lyrin-A16)-[/mnt/s/MoeCTF/Misc]
+└─$ binwalk WebRepo.webp
+
+DECIMAL       HEXADECIMAL     DESCRIPTION
+--------------------------------------------------------------------------------
+16012         0x3E8C          7-zip archive data, version 0.3
+```
+
+注意到在 `0x3E8C` 后存在 7-zip 归档文件，我们使用 `dd` 来提取：
+
+```bash
+dd if=./WebRepo.webp of=./WebRepo.7z bs=1 skip=16012
+```
+
+得到 `WebRepo.7z`。使用 7-Zip 打开发现里面有一个 `.git` 文件，熟悉 Git 的朋友们一定知道这其中的奥秘了。
+
+直接将 `.git` 文件夹拖拽到一个空文件夹中，使用 Visual Studio Code 的 Git 可视化工具读取名为 `flag` 的 commit 中提交的新文件即可。
+
 ## ez_ssl
 
 > [!NOTE]
-> **FLAG:** `moectf{???}`
+> **FLAG:** `moectf{upI0@d-l0G_TO-DeCrYPT_uploAD}`
 
 解包附件后得到一个 `.pcapng` 文件，故继续使用 WireShark 打开分析。我们发现，近乎大部分的流量都是 `TLSv1.2` 的，故我们必须要先解密这些 `HTTPS` 流量。考虑到题目所说的
 
@@ -150,9 +206,34 @@ Linux 下无法便捷地使用 Audition 等工具，故这里略去截图。
 
 ![选择 `.pcapng` 文件提取 `CLIENT_RANDOM`](./select_master_secret.png)
 
+> [!TIP]
+>
+> 星澜音的实践中，在 Linux 上直接选择 `.pcapng` 文件就好了，但是在 Windows 上却不行🤔这有啥说法吗……？
+
 之后继续过滤全体 HTTP POST 请求，在 Filter（过滤器）中输入 `http.request.method == "POST" && http.content_type contains "multipart/form-data"`，过滤出请求 165 和 243，又由于 243 是传输 `CLIENT_RANDOM` 的请求，锁定 165 后，导出其对象，手动移除该请求体的头尾后，得到 `flag_extracted.zip`。
 
-不过该 `flag_extracted.zip` 仍然有一层密码保护。这里星澜音就不会做了。
+不过该 `flag_extracted.zip` 仍然有一层密码保护，在 7-Zip 的 文件 > 属性 中发现了注释
+
+> 锘垮瘑鐮佷负7浣嶇函鏁板瓧
+
+继续使用乱码恢复器进行恢复，发现是将 UTF-8 编码的文本以 GBK 形式打开。通过解码得到
+
+> 密码为7位纯数字
+
+准备使用 `john` 爆破。生成哈希后，我们使用增量模式爆破即可。
+
+```bash
+zip2john flag_extracted.zip > flag_extracted.john
+john --incremental=Digits --min-length=7 --max-length=7 flag_extracted.john
+```
+
+得到密码 `6921682`。解压后得到 `flag.txt`（省略了部分）——
+
+```plain
+Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook! Ook? Ook! Ook! Ook. Ook? Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook? Ook. Ook? Ook! Ook. Ook? Ook. Ook. Ook. Ook. Ook. Ook. ...
+```
+
+无敌了……用 Ook 解密器即可。
 
 ## ez_png
 
@@ -432,7 +513,7 @@ lock.zip/flag.zip:a296a5ec1385f394e8cb:flag.zip:lock.zip:lock.zip
 
 这便得到了 `lock.zip` 的密码 `a296a5ec1385f394e8cb`。解压得到其中的 `flag.zip`，后者中有 `明文.exe` 和 `flag.txt`，终于拿到 `flag` 了！打开一看，不好，这 `flag.zip` 怎么还有密码？尝试用 `john` 再次爆破，跑了半个小时没有结果，遂放弃这条路。
 
-其实到这里星澜音已经决定打舞萌去了，不过出题人 `E=hν` 联系到星澜音，让星澜音再想象，然后星澜音就备受鼓舞<sub>（存疑）</sub>地继续尝试新方法了。
+其实到这里星澜音已经决定打舞萌去了，不过出题人 `E=hν` 联系到星澜音，让星澜音再想想，然后星澜音就备受鼓舞<sub>（存疑）</sub>地继续尝试新方法了。
 
 目光回到 `flag.zip` 上。根据 [ZIP 格式 - CTF Wiki](https://ctf-wiki.org/misc/archive/zip/#_6) 中「明文攻击」记载的内容，ZIP 存在这样一种特性：倘若我们得到一个已有的未压缩的（仅打包的）`.zip` 文件，并已知其中至少 12 个字节的连续数据，就可以暴力破解出该 `.zip` 中的文件。当然，这要求 `.zip` 文件必须是 ZipCrypto Store 打包的，而这里，我们的 `.zip` 恰好满足这一点，这可以通过 Ark 压缩文件管理工具 验证。
 

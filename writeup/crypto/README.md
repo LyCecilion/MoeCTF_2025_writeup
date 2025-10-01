@@ -11,7 +11,7 @@
 > [!NOTE]
 > **FLAG:** `moectf{th1s_1s_y0ur_f1rst_ElG@m@l}`
 
-下载并分析题目给定的 Python 文件（排版有优化）：
+下载并分析题目给定的 Python 脚本（排版有优化）：
 
 ```python
 #!/usr/bin/env python3
@@ -74,47 +74,69 @@ x = 8010957078086554284020959664124784479610913596560035011951143269559761229114
 
 > 此处的 `secret` 模块可以理解为存储了明文 `flag`的 Python 文件，属于未知信息，而非公开的可用模块。你需要尝试从密文去恢复原始的 `flag`，而不是去下载 `secret` 模块。`secrets` 则是一个用于生成管理密码的安全随机数的 Python 标准库。`bytes_to_long` 函数用于将 `flag` 编码为整数。
 
-从 `generate_elgamal_keypair` 就能看出来，它实现了一个 ElGamal 加密算法。
+从 `generate_elgamal_keypair` 的名称就能看出，该 Python 脚本实现了 ElGamal 加密算法。下面我们补充一些关于群的基本知识。
 
-ElGamal 加密算法建立在一个大素数 $p$ 以及模 $p$ 的乘法群 $\Z^*_p$ 上，其乘法群的集合包含 $1, 2, 3, \cdots, p - 1$ 这些数，乘法群的运算为模 $p$ 运算，即对其中两个数相乘后，结果若超过了 $p - 1$，则除以 $p$ 且取其余数作结果。
+> [!TIP]
+> 一个群是一个 **有序对** $(G, *)$， 其中 $G$ 是一个非空集合，$*$ 是定义在 $G$ 上的二元运算. 我们要求该运算须满足以下四条公理：
+>
+> 1. **封闭性（Closure）**：对于任意 $a, b \in G$，都有 $a * b \in G$. 一般地，当我们说 $*$ 是定义为 $G$ 上的二元运算时，封闭性通常已经隐含.
+> 2. **结合律（Associativity）**：对于任意的 $a, b, c \in G$，都有 $(a * b) * c = a * (b * c)$.
+> 3. **单位元（Identity element）**：存在某个元素 $e \in G$，使得对于任意 $a \in G$，都有 $e * a = a * e = a$.
+> 4. **逆元（Inverse element）**：对于任意 $a \in G$，存在某个元素 $a^{-1} \in G$ 使得 $a * a^{-1} = a^{-1} * a = e$.
+>
+> 群不能只看作一个集合或一个运算，它必须是 **两者的结合**，同时满足上面的公理. 如果一个群满足交换律（即 $a * b = b * a$ 对于任意 $a, b \in G$ 成立），则我们称该群为 **阿贝尔群（Abelian group）**.
+>
+> 群可以分为 **有限群** 和 **无限群**. 有限群的集合 $G$ 中元素个数有限，记作 $\lvert G \rvert = n$，称为群的阶，即群的集合内元素的数量：例如 $(\mathbb{Z}_n, +)$，即模 $n$ 的整数加法群，其阶为 $n$. 无限群的集合元素个数无限：例如 $(\mathbb{Z}, +)$，即整数加法群.
+>
+> 对于一个群 $(G, *)$，其中 $*$ 是群的二元运算，如果 $H$ 是 $G$ 的一个非空子集，并且 $H$ 在运算 $*$ 下也构成一个群，则称 $H$ 为 $G$ 的一个 **子群**，记作 $H \leq G$.
+>
+> 我们判定一个群 $G$ 的非空子集 $H$ 是子群，**当且仅当** 同时满足以下三个条件：
+>
+> 1. **封闭性**：对于任意 $a, b \in H$，有 $a * b \in H$.
+> 2. **单位元**：$G$ 的单位元 $e$ 也属于 $H$.
+> 3. **逆元**：对于任意 $a \in H$，有 $a$ 的逆元 $a^{-1} \in H$.
+>
+> 设 $G$ 是一个群，$S$ 是 $G$ 的一个非空子集. 所有包含 $S$ 的 $G$ 的子群中最小的那个记作 $\langle S \rangle$，它具体由所有形如 $s_1^{\epsilon_1} s_2^{\epsilon_2} \cdots s_k^{\epsilon_k}$ 的元素构成，其中 $s_i \in S$，$\epsilon_i = \pm 1$，$k$ 为任意非负整数. 如果 $\langle S \rangle = G$，那么我们称 $S$ 是群 $G$ 的一个 **生成元集合**，$S$ 中的元素就被称为 **生成元**，同时我们说 $S$ **生成了** 群 $G$，记作 $G = \langle S \rangle$. 如果 $S$ 中仅包含一个元素，即 $S = \{a\}$，则我们称 $G = \langle a \rangle$ 为一个 **循环群**.
 
-我们熟知群具有这样的几个特点：封闭性、结合律、单位元、存在逆元；而对于一个大素数 $p$，集合 $S = \{1, 2, \cdots, p - 1\}$ 作为模 $p$ 的乘法群集合，模 $p$ 运算作为乘法群的运算法则，它们也具备群的条件，这在后文给出了说明。
+ElGamal 加密算法建立在一个大素数 $p$ 以及模 $p$ 的乘法群 $\mathbb{Z}^*_p$ 上。其乘法群的集合包含 $1, 2, 3, \cdots, p - 1$ 这些数，乘法群的运算为模 $p$ 的乘法，即对其中两个数相乘后，结果若超过了 $p - 1$，则除以 $p$ 且取其余数作结果。我们将在后文证明模 $p$ 的乘法群满足群的定义，即其运算是满足四条公理的。
 
-一个这样的模 $p$ 乘法群存在生成元 $g$。生成元 $g$ 具有非常重要的性质：它的
+对于任意素数 $p$，群 $\mathbb{Z}_p^*$ 是一个 **循环群**，这一点将在后文证明。这意味着，一个模 $p$ 乘法群存在一个 **原根** 或 **生成元** $g \in \mathbb{Z}_p^*$，使得
 
 $$
 g^1, g^2, g^3, \cdots, g^{p - 1} \pmod{p}
 $$
 
-恰好能覆盖 $\Z^*_p$ 中的所有数。
+恰好覆盖 $\mathbb{Z}^*_p$ 集合中的所有元素。
 
-在正向计算的情况下，给定指数 $x$（私钥），计算 $y = g^x \mod p$（公钥）是容易的；但在逆向计算的情况下，给定公钥 $y$ 和底数 $g$，求出私钥 $x$ 使得 $g^x \equiv y \pmod{p}$ 就是离散对数问题，求解 $x$ 在算法上是困难的，这便是 ElGamal 算法的安全之处，这在后文也给出了说明。
+在正向计算的情况下，给定指数 $x$（私钥），计算 $y = g^x \bmod p$（公钥）是容易的；但在逆向计算的情况下，给定公钥 $y$ 和底数 $g$，求出私钥 $x$ 使得 $g^x \equiv y \pmod{p}$ 在算法上是困难的，这就是离散对数问题，而这恰为 ElGamal 算法的安全之处，这在后文也给出了说明。
 
 不过，题目给出的 Python 脚本已经给定了 $x$，我们便可以直接用来解密。编写脚本如下：
 
 ```python
-"""ez_des_brute_force.py
+"""crypto_beginning_solver.py
 
-该 Python 脚本供 MoeCTF 2025 的 Crypto 赛道中，「ez_DES」题目使用。
-由 星澜音 在 Gemini 和 DeepSeek 的帮助下编写。
+该 Python 脚本供 MoeCTF 2025 的 Crypto 赛道中，「Crypto 入门指北」题目使用。
+由 星澜音 编写。
 """
+
 from Crypto.Util.number import long_to_bytes
 
+# 定义给定的数字 `p`, `x`, `c1` 和 `c2`
 p = 11540963715962144951763578255357417528966715904849014985547597657698304891044841099894993117258279094910424033273299863589407477091830213468539451196239863
 x = 8010957078086554284020959664124784479610913596560035011951143269559761229114027738791440961864150225798049120582540951874956255115884539333966429021004214
 c1 = 6652053553055645358275362259554856525976931841318251152940464543175108560132949610916012490837970851191204144757409335011811874896056430105292534244732863
 c2 = 2314913568081526428247981719100952331444938852399031826635475971947484663418362533363591441216570597417789120470703548843342170567039399830377459228297983
 
-# 计算共享秘密 s
+# 计算共享秘密 `s`
 s = pow(c1, x, p)
 
-# 计算 s 的模逆元（使用费马小定理）
+# 计算 `s` 的模逆元（使用费马小定理）
 s_inv = pow(s, p-2, p)
 
-# 计算明文 m
+# 计算明文 `m`
 m = (c2 * s_inv) % p
 
-# 将 m 转换为字节序列（flag）
+# 将 `m` 转换为字节序列 `flag`
 flag = long_to_bytes(m)
 
 print(flag)
@@ -126,18 +148,18 @@ print(flag)
 b'moectf{th1s_1s_y0ur_f1rst_ElG@m@l}'
 ```
 
-即可得到 `flag`。
+即可得到 `flag`。下面，我们继续上文中留下的问题。
 
-### 乘法群的条件
+### 模 $p$ 乘法群的运算满足四条公理
 
 #### 封闭性
 
-群的封闭性要求一个集合中的两个数经过运算后，其结果一定还在这个集合里。
+群的封闭性要求一个集合中的两个数经过运算后，其结果一定还在这个集合里.
 
 对于任意 $a, b \in S$，考虑到 $p$ 为素数，且 $p \nmid a, p \nmid b$ 因为 $1 \leq a, b \leq p - 1 < p$，所以 $p \nmid a \cdot b$（这可以由反证法得到，因为如果 $p \mid a \cdot b$，必然有 $p \mid a$ 或 $p \mid b$），所以
 
 $$
-\boxed{a \cdot b \mod p \in S}
+\boxed{a \cdot b \bmod p \in S.}
 $$
 
 #### 结合律
@@ -148,22 +170,19 @@ $$
 (x*y)*z = x*(y*z) \quad \forall x, y, z \in S
 $$
 
-模乘法继承了整数的结合律 $(a \cdot b) \cdot c = a \cdot (b \cdot c)$，而模运算和乘法操作是良好兼容的，也就是说，在乘法运算中无论何时取模，最终的计算结果都是一致的。即，我们有
+模乘法继承了整数的结合律 $(a \cdot b) \cdot c = a \cdot (b \cdot c)$，而模运算和乘法操作是良好兼容的，也就是说，在乘法运算中无论何时取模，最终的计算结果都是一致的. 即，我们有
 
 $$
-\boxed{(a \cdot b) \mod p \equiv ((a \mod p) \cdot (b \mod p)) \mod p}
+\boxed{(a \cdot b) \bmod p \equiv ((a \bmod p) \cdot (b \bmod p)) \bmod p.}
 $$
 
-下面给出一个证明：
-
-设
+下面给出一个证明：我们设
 
 $$
-a = q_a p + r_a, \quad 0 \leq r_a < p, \quad \quad
-b = q_b p + r_b, \quad 0 \leq r_b < p
+a = q_a p + r_a, \quad 0 \leq r_a < p, \quad b = q_b p + r_b, \quad 0 \leq r_b < p
 $$
 
-其中 $r_a = a \mod p$、$r_b = b \mod p$。
+其中 $r_a = a \bmod p, \ r_b = b \bmod p$.
 
 注意到
 
@@ -171,25 +190,32 @@ $$
 ab = (q_a p + r_a)(q_b p + r_b) = p(pq_aq_b + q_ar_b + q_br_a) + r_ar_b
 $$
 
-因此 $(a \cdot b) \mod p = r_ar_b$。又由 $(a \mod p) \cdot (b \mod p) = r_ar_b$，证毕。
+因此 $(a \cdot b) \bmod p = r_ar_b$. 又由 $(a \bmod p) \cdot (b \bmod p) = r_ar_b$，等号两边相等，证毕.
 
 #### 单位元
 
 显然的，有
 
 $$
-\boxed{1 \cdot a = a \equiv a \pmod{p}}
+\boxed{1 \cdot a \equiv a \pmod{p}.}
 $$
+
+因为 $1 \cdot a = a$.
 
 #### 逆元
 
-类比乘法运算中 $3 \times \frac{1}{3} = 1$，我们说实数意义下的 $\frac{1}{3}$ 是 $3$ 的逆元。逆元的要求是群定义的核心，它使得群具有「可逆」的性质，允许我们解决方程和撤销运算，换句话说，它保证了群的完整性和对称性。
+类比乘法运算中 $3 \times \frac{1}{3} = 1$，我们说实数意义下的 $\frac{1}{3}$ 是 $3$ 的逆元. 逆元的要求是群定义的核心，它使得群具有「可逆」的性质，允许我们解决方程和撤销运算，换句话说，它保证了群的完整性和对称性.
 
-我们要证明，对于 $\forall a \in S$ 存在一个逆元 $b \in S$ 使得 $a \cdot b \equiv 1 \pmod{p}$。我们有 [裴蜀定理（Bézout's lemma）](https://oi-wiki.org/math/number-theory/bezouts/)：
+我们要证明，对于 $\forall a \in S$ 存在一个逆元 $b \in S$ 使得 $a \cdot b \equiv 1 \pmod{p}$. 我们有 [裴蜀定理（Bézout's lemma）](https://oi-wiki.org/math/number-theory/bezouts/)：
 
-> 设 $a, b$ 为不全为 0 的整数。那么，对于 $\forall x, y \in \Z$ 都有 $\gcd{(a, b) | ax+by}$ 成立；而且，$\exist x, y \in \Z$ 使得 $ax + by = \gcd(a, b)$ 成立。
+> [!TIP]
+> **裴蜀定理（Bézout's lemma）**
+>
+> 设 $a, b$ 为不全为 $0$ 的整数. 那么，对于 $\forall x, y \in \mathbb{Z}$ 都有 $\gcd{(a, b) \mid ax+by}$ 成立；而且，$\exist x, y \in \mathbb{Z}$ 使得 $ax + by = \gcd(a, b)$ 成立.
+>
+> 下文将给出 裴蜀定理 的证明.
 
-略去证明（因为星澜音不会），我们知道，由于 $p$ 是一个大的素数，任意 $a \in \{1, 2, \cdots, p - 1\}$ 都满足 $\gcd(a, p) = 1$，因此存在整数 $x, y$ 使得
+我们知道，由于 $p$ 是一个大的素数，任意 $a \in \{1, 2, \cdots, p - 1\}$ 都满足 $\gcd(a, p) = 1$，因此存在整数 $x, y$ 使得
 
 $$
 ax + py = 1
@@ -201,49 +227,158 @@ $$
 ax \equiv 1 \pmod{p}
 $$
 
-因此，$x \mod p$ 即 $a$ 的逆元。取一个 $b = x \mod p$ 使得 $b \in S$，即得到了 $a$ 在模 $p$ 乘法群的逆元 $b$。
+因此，$x \bmod p$ 即 $a$ 的逆元。取一个 $b = x \bmod p$ 使得 $b \in S$，即得到了 $a$ 在模 $p$ 乘法群的逆元 $b$.
 
 $$
-\boxed{\forall a \in S, \exists b \in S \text{ such that } a \cdot b \equiv 1 \pmod{p}}
+\boxed{\forall a \in S,\ \exists b \in S \text{ such that } a \cdot b \equiv 1 \pmod{p}}
 $$
 
 ### ElGamal 算法浅析
 
-在 ElGamal 算法的加密过程中，假设发送方 Alice 和接收方 Bob 在传递消息 $m$ 其中 $m \in \Z^*_p$，首先，Bob 要生成一个公钥和私钥：
+在 ElGamal 算法的加密过程中，假设发送方 Alice 和接收方 Bob 在传递消息 $m$ 其中 $m \in \mathbb{Z}^*_p$，首先，Bob 要生成一个公钥和私钥：
 
 1. Bob 选择一个大素数 $p$；
-2. Bob 选择一个生成元 $g \in \Z^*_p$；
+2. Bob 选择一个生成元 $g \in \mathbb{Z}^*_p$；
 3. Bob 随机生成一个私钥 $x$ 满足 $1 \leq x \leq p - 2$；
-4. Bob 计算公钥 $y = g^x \mod p$。
+4. Bob 计算公钥 $y = g^x \bmod p$.
 
 Bob 将公钥 $(p, g, y)$ 公开并将私钥 $x$ 保密。随后，Alice 将加密消息 $m$：
 
 1. Alice 获取 Bob 的公钥 $(p, g, y)$；
 2. Alice 随机选择一个临时密钥 $k$ 满足 $1 \leq k \leq p - 2$；
-3. Alice 计算第一部分密文：$c_1 = g^k \mod p$；
-4. Alice 计算第二部分密文：$c_2 = m \cdot y^k \mod p$。
+3. Alice 计算第一部分密文：$c_1 = g^k \bmod p$；
+4. Alice 计算第二部分密文：$c_2 = m \cdot y^k \bmod p$.
 
 随后 Alice 将密文 $(c_1, c_2)$ 发送给 Bob。随后 Bob 将用其私钥 $x$ 解密密文：
 
 1. Bob 收到 Alice 的密文 $(c_1, c_2)$；
-2. Bob 计算共享秘密 $s = c_1^x \mod p$，这是因为 $c_1 = g^k \mod p$ 即 $c_1 \equiv g^k \pmod{p}$，根据模运算的性质有 $c_1^x \equiv (g^k)^x \mod p$ 所以 $s = c_1^x \mod p = g^{kx} \mod p$；
+2. Bob 计算共享秘密 $s = c_1^x \bmod p$，这是因为 $c_1 = g^k \bmod p$ 即 $c_1 \equiv g^k \pmod{p}$，根据模运算的性质有 $c_1^x \equiv (g^k)^x \mod p$ 所以 $s = c_1^x \bmod p = g^{kx} \bmod p$；
 3. Bob 计算 $s$ 的模 $p$ 逆元 $s^{-1}$，使得 $s \cdot s^{-1} \equiv 1 \pmod{p}$;
-4. Bob 恢复消息，以 $m = c_2 \cdot s^{-1} \mod p$。
+4. Bob 恢复消息，以 $m = c_2 \cdot s^{-1} \bmod p$.
 
 第 4 步中，展开后，有
 
 $$
 \begin{align*}
 m
-&= c_2 \cdot s^{-1} \mod p \\
-&= (m \cdot y^k) \cdot s^{-1} \mod p \\
-&= (m \cdot g^{xk}) \cdot s^{-1} \mod p \\
-&= (m \cdot s^{-1} \mod p) \cdot (g^{xk} \mod p) \\
-&= m \cdot s \cdot s^{-1} \mod p \\
-&= m \cdot 1 \mod p \\
+&= c_2 \cdot s^{-1} \bmod p \\
+&= (m \cdot y^k) \cdot s^{-1} \bmod p \\
+&= (m \cdot g^{xk}) \cdot s^{-1} \bmod p \\
+&= (m \cdot s^{-1} \bmod p) \cdot (g^{xk} \bmod p) \\
+&= m \cdot s \cdot s^{-1} \bmod p \\
+&= m \cdot 1 \bmod p \\
 &= m
 \end{align*}
 $$
+
+### 裴蜀定理（Bézout's lemma）的证明
+
+我们记 $d = \gcd(a, b)$. 考虑到 $d \mid a$ 且 $d \mid b$，即存在整数 $u, v$ 使得 $a = du, b = dv$ 成立. 因此，总有
+
+$$
+ax + by = d(ux + vy)
+$$
+
+所以 $d \mid ax + by$.
+
+下面我们要说明存在 $x, y$ 使得等式成立.
+
+如果 $a, b$ 之一为 $0$，不妨设 $b = 0$，则 $d = \gcd(a, 0) = a$，显然 $(x, y) = (1, 0)$ 使得等式成立.
+
+如果 $a, b$ 均不为零，考虑到 $\gcd(a, b) = \gcd(-a, b) = \gcd(a, -b)$，不妨设 $a, b$ 均为正数.
+
+我们引入「欧几里得算法」或「辗转相除法」：
+
+> [!TIP]
+> **欧几里得算法** 或 **辗转相除法**
+>
+> 已知 $a$ 和 $b$，求 $\gcd(a, b)$.
+>
+> 这里不妨设 $a > b$（$a = b$ 时结果显然），若 $b$ 是 $a$ 的约数，那么 $b = \gcd(a, b)$. 下面讨论不能整除的情况，即 $a = b \times k + c$，其中 $c < b$. 我们有
+>
+> $$
+> \gcd(a, b) = \gcd(b, a \bmod b).
+> $$
+>
+> 我们欲证明该结论，需证明 $a, b$ 的公约数与 $b, a \bmod b$ 的公约数是相同的，这样它们各自的最大公约数也是相同的. 这里，由 $a = bk + c$，显然有 $c = a \bmod b$.
+>
+> 首先，设 $d \mid a, d \mid b$，则 $c = a - bk$，则 $\frac{c}{d} = \frac{a}{d} - \frac{b}{d} k$. 考虑到 $\frac{a}{d}, \frac{b}{d}, k \in \mathbb{Z_+}$，所以 $\frac{c}{d}$ 也是整数，即有 $d \mid c$ 成立. 又 $c = a \bmod b$，这意味着，所有对于 $a, b$ 的公约数，也是 $b, a \bmod b$ 的公约数. 证明完毕.
+>
+> 其次，设 $d \mid b, d \mid (a \bmod b)$，则 $c = a - bk$ 得 $a \bmod b = a - bk$，则 $\frac{a \bmod b}{d} = \frac{a}{d} - \frac{b}{d}k$，移项得到 $\frac{a \bmod b}{d} + \frac{b}{d}k = \frac{a}{d}$. 考虑到 $\frac{a \bmod b}{d}, \frac{b}{d}, k \in \mathbb{Z}_+$，所以 $\frac{a}{d}$ 也是整数，即有 $d \mid a$ 成立. 这意味着，所有对于 $b, a \bmod b$ 的公约数，也是 $a, b$ 的公约数. 证明完毕.
+>
+> 综上，证毕.
+
+对于 $\gcd(a, b)$，我们使用上述算法，可得如下所示的过程：
+
+$$
+\begin{aligned}
+a   &= q_1b   + r_1, && 0\le r_1 < b,\\
+b   &= q_2r_1 + r_2, && 0\le r_2 < r_1,\\
+r_1 &= q_3r_2 + r_3, && 0\le r_3 < r_2,\\
+    & \cdots && \qquad \cdots \\
+r_{n-3} &= q_{n-1}r_{n-2} + r_{n-1}, && 0\le r_{n-1} < r_{n-2},\\
+r_{n-2} &= q_nr_{n-1} + r_n,         && 0\le r_n     < r_{n-1},\\
+r_{n-1} &= q_{n+1}r_n.
+\end{aligned}
+$$
+
+显然 $r_n = d$. 不难观察到，事实上，辗转相除法从第三步起的每一步都满足通式
+
+$$
+\quad r_i = r_{i-2} - q_i r_{i-1}
+$$
+
+而对于第一步，$a = q_1 b + r_1$ 即 $r_{-1} = q_1 r_0 + r_1$，所以 $r_{-1} = a$ 且 $r_0 = b$. 类似地，第二步亦可化归，因此辗转相除法的每一步过程总能表示为上式的形式.
+
+我们为每一个余数 $r_i$ 记一个表示法：
+
+$$
+r_i = s_i a + t_i b
+$$
+
+现在我们有
+
+$$
+r_{i-2} = s_{i-2}a + t_{i-2}b, \quad r_{i-1} = s_{i-1}a + t_{i-1}b,
+$$
+
+代入辗转相除法的通式，得
+
+$$
+\begin{aligned}
+r_i &= (s_{i-2} a + t_{i-2} b) - q_i (s_{i-1} a + t_{i-1} b) \\
+    &= (s_{i-2} - q_i s_{i-1}) a + (t_{i-2} - q_i t_{i-1}) b.
+\end{aligned}
+$$
+
+所以系数满足递推关系
+
+$$
+s_i = s_{i-2} - q_i s_{i-1}, \quad t_i = t_{i-2} - q_i t_{i-1}.
+$$
+
+基于此，由
+
+$$
+r_i = s_i a + t_i b \implies r_n = s_n a + t_n b
+$$
+
+我们只需取 $x = s_n, y = t_n$ 即可. 又由辗转相除法过程的第一行和第二行，有
+
+$$
+r_{-1} = a, \quad r_0 = b
+$$
+
+显然有
+
+$$
+\begin{aligned}
+r_{-1} = s_{-1} a + t_{-1} b = 1 \cdot a + 0 \cdot b &\implies (s_{-1}, t_{-1}) = (1, 0),\\
+r_0 = s_0 a + t_0 b = 0 \cdot a + 1 \cdot b &\implies (s_0, t_0) = (0, 1)
+\end{aligned}
+$$
+
+从 $(s_{-1}, t_{-1})$ 和 $(s_0, t_0)$ 开始递推，我们必然能推出 $s_n$ 和 $t_n$，即一定存在这样的 $x, y$. 这即证明了 裴蜀定理.
 
 ## ez_DES
 

@@ -10,8 +10,10 @@
 
 > [!NOTE]
 > **FLAG:** `moectf{th1s_1s_y0ur_f1rst_ElG@m@l}`
+>
+> 题目源文件（`crypto_starter.py`）和解答脚本（`crypto_beginning_solver.py`）位于 [此处](../crypto/problems_and_solutions/crypto_starter/)。
 
-下载并分析题目给定的 Python 脚本（排版有优化）：
+从入门指北 PDF 文件中复制出 Python 脚本（排版有优化）：
 
 ```python
 #!/usr/bin/env python3
@@ -41,9 +43,9 @@ key = generate_elgamal_keypair(bits=512)
 p, g, y, x = key
 
 print("=== 公钥 (p, g, y) ===")
-print("p =", p)
-print("g =", g)
-print("y =", y)
+print("p = ", p)
+print("g = ", g)
+print("y = ", y)
 print()
 
 k = randrange(1, p - 2)
@@ -52,10 +54,10 @@ c1 = pow(g, k, p)
 c2 = (m * pow(y, k, p)) % p
 
 print("=== 密文 (c1, c2) ===")
-print("c1 =", c1)
-print("c2 =", c2)
+print("c1 = ", c1)
+print("c2 = ", c2)
 # 不小心把 `x` 输出了（）
-print("x =", x)
+print("x = ", x)
 
 """
 === 公钥 (p, g, y) ===

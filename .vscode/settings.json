@@ -1,0 +1,10 @@
+{
+    "conventionalCommits.scopes": [
+        "Misc",
+        "Starter",
+        "Pwn",
+        "Crypto",
+        "Misc",
+        "Web"
+    ]
+}

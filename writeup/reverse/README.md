@@ -994,6 +994,205 @@ if ( v6 < (__int64)(int)v5 )
 
 对 `GEOI^LQbj\` 先转换回 Hex 后取 `0x2A` 异或，再转换回 ASCII 编码得到 `moectf{H@v`，初见端倪！后面的 `0x1E 0x75 0x4C 0x7F 0x44 0x57` 直接取 `0x2A` 异或后转换回 ASCII 编码得到 `4_fUn}`，拼接在一起就是 `flag`。
 
+## mazegame
+
+> [!NOTE]
+> **FLAG** 的开头必须是 `moectf{ssddddwwddssddddssddssssddwwddwwddwwwwddddssssaassssaaaassaassaawwaawwwwaaaassddssaassddssssaaaassddddddwwwwddddssddddwwddwwaawwddddssssssssssssaaasssdddssssaassssaaaassaassaawwaawwwwaaaassddssaassddssssaaaassddddddwwwwddddssddddwwddwwaawwddddssssssssssssaaawawwwaassaawwaassaaaaaaaaaawwwwaassssssddddssssssdddddddddwwdddssddwwwdddsssdddddwwawwddddddddddddddddddddssddddddddwwwwawwwwwwwwdwwwwwwwwwwwaawwdwwwwwwwwwwdwwwwwwaaaasssssssssssssssssssssssssssssssssssssaaawwaaaaaaaaaaaaaaaaaaawwwddddddddwwddddddddddwwwawaawawwwwwwwwwwwwwddwwwwaassaawwaassaaaaaaaaaawwwwaawwddwwaawwdwwwdwwwwddddddddddssddddssssdsdssddssaassaaaawwaaaassssaaaaaawwddddwwwwaawwawaassdsssdd`，结尾必须是 `}`。
+
+使用 ~~群内大佬倾情赠送的 IDA Pro 9.0 学习版~~ 反编译 `moe_maze.exe` 并在下载后 24 小时内删除 IDA Pro，可以得到
+
+```c
+int __fastcall main(int argc, const char **argv, const char **envp)
+{
+    unsigned __int64 n0x3E7;  // rax
+    int v4;                   // ebx
+    __int64 v5;               // r9
+    int v6;                   // r11d
+    unsigned __int64 n0x37;   // r8
+    __int64 n32;              // r10
+    unsigned __int64 n0x37_1; // rdi
+    char *Format;             // rcx
+    _BYTE v12[1008];          // [rsp+20h] [rbp-408h]
+
+    sub_7FF6426F10E0(argc, argv, envp);
+    sub_7FF6426F1020(asc_7FF6426F4138);
+    sub_7FF6426F1020((char *)&Format_);
+    while (1)
+    {
+    LABEL_2:
+        while (1)
+        {
+            sub_7FF6426F1020(asc_7FF6426F4190);
+            sub_7FF6426F1080("%s");
+            n0x3E7 = -1LL;
+            do
+                ++n0x3E7;
+            while (v12[n0x3E7]);
+            if (n0x3E7 <= 0x3E7)
+                break;
+            sub_7FF6426F1020((char *)&Format__0);
+        }
+        v4 = 1;
+        v5 = 0LL;
+        v6 = 1;
+        n0x37 = 1LL;
+        n32 = 1LL;
+        if ((int)n0x3E7 > 0)
+            break;
+    LABEL_19:
+        Format = (char *)&byte_7FF6426F4118;
+    LABEL_20:
+        sub_7FF6426F1020(Format);
+        sub_7FF6426F1020((char *)&Format__1);
+    }
+    n0x37_1 = 1LL;
+    while (1)
+    {
+        switch (v12[v5])
+        {
+        case 'A':
+        case 'a':
+            --v4;
+            --n32;
+            --n0x37_1;
+            break;
+        case 'D':
+        case 'd':
+            ++v4;
+            ++n32;
+            ++n0x37_1;
+            break;
+        case 'S':
+        case 's':
+            ++v6;
+            ++n0x37;
+            break;
+        case 'W':
+        case 'w':
+            --v6;
+            --n0x37;
+            break;
+        default:
+            sub_7FF6426F1020((char *)&Format__2);
+            sub_7FF6426F1020((char *)&Format__1);
+            goto LABEL_2;
+        }
+        if (n0x37 > 0x37 || n0x37_1 > 0x37)
+        {
+            Format = (char *)&unk_7FF6426F40D8;
+            goto LABEL_20;
+        }
+        if (byte_7FF6426F5660[56 * n0x37 + n32] == 0x31)
+        {
+            Format = (char *)&unk_7FF6426F40F8;
+            goto LABEL_20;
+        }
+        if (n0x37 == 15 && n32 == 32)
+            break;
+        if (++v5 >= (int)n0x3E7)
+            goto LABEL_19;
+    }
+    sub_7FF6426F1020(asc_7FF6426F41E0);
+    sub_7FF6426F1020("moectf{%s}\n");
+    return 0;
+}
+```
+
+我们注意到，程序内部并没有内置 `flag`，而 `flag` 是 `moectf{}` 包裹用户输入得到的……太坑了。根据实际游玩体验和 `ADSW` 推断这是一个迷宫游戏。事实上，星澜音中午刷 GitHub 的时候发现了一个神秘项目 [Maze Solver](https://github.com/LingerJAB/MazeSolver)，哈哈，这就派上用场了😋
+
+程序中大部分都是判断迷宫的逻辑，而我们只需要着重关注这一行
+
+```c
+if (byte_7FF6426F5660[56 * n0x37 + n32] == 0x31)
+```
+
+我们可以结合游戏体验猜测：`n0x37` 和 `n32` 分别为行和列中的一个（具体是哪个……不重要）。`0x31` 是 ASCII 字符 `1` 的编码的十六进制表示。这段逻辑应当是判定失败的逻辑，我们不难推测到，`byte_7FF6426F5660` 存储了一个超长的字符串，将整个迷宫的信息包含在内，其中 `1` 的地方表示这里是墙壁，而 `0` 的地方表示这里是空白。我们要做的就是去提取出这个 `byte_7FF6426F5660`。IDA Pro 双击得到
+
+![在 IDA Pro 中提取失败](./failed_to_extract_in_IDA_Pro.png)
+
+嗯？怎么没东西……询问一下 Gemini 才知道，这一块内存原来还没有被初始化，它会在程序运行的时候被动态地安排。太坏了喵😡那我只能动用动态调试器之力了。
+
+打开 x64dbg 并打开 `moe_maze.exe`，运行后，在下方「内存 3」窗格中找到内存地址 `7FF6426F5660`，找到了——
+
+![在 x64dbg 中找到初始化后的字符串](./find_initialized_string_in_x64dbg.png)
+
+复制出来，写一个 Python 脚本简单处理一下就好了。
+
+```plain
+11111111111111111111111111111111111111111111111111111111
+1S100000000000000010000011011101011111111101011100000111
+10111010111111111010111011000001000001000001000101110111
+10000010000010000010001011011111111101110111011101110111
+10111111111011101110111011010000000000010100010001110111
+10100000001000101000100011010101111111011101110101110111
+10101011111110111011101011010101000001000000010101110111
+10101010000010100000101011110101110101111101111111110111
+10111010111010101111101011100101000100000101000101110111
+10000010001010001000001011001111011111010101011101110111
+11111011101011111011111111101000100000101100101001110111
+10001010001000100010000010001010011000100010010011000001
+10111010111110101010111011011001011111010101011101011101
+10001010001000001010001011000101000100000101000101011101
+11101011101111111011101011110101110111111101110101011101
+10001000101000001010001011000100E10100000101000101011101
+10111111101011101110111011011111110101110111011101011101
+10001000001000100000001011000100000100010000000101011001
+11101011111011111111101011110101111101111111110101011011
+10101000000010001000101011010100000001000100010101011011
+10101111111110101010101011010111111111010101010101011011
+10100000000000100010101011010000000000010001010101011011
+10111111111111111110111011011111111111111111011101011011
+10000000001111000000000011110111010000111100011111011011
+11101111100000011011011111111010110111011101100001011011
+11101111111111111011011111111101110111101101100001011011
+10001000111111000010000011111010110111011101100001011011
+10111010111111111010111011110111010000111101100001010011
+10000010000010000010001011111111111111111101100001010111
+10111111111011101110111011110001000110001101100001010001
+10100000001000101000100011110111011101111101100001011101
+10101011111110111011101011110001000101111101100001011101
+10101010000010100000101011111101011101111101100001011101
+10111010111010101111101011110001000110001101100001011101
+10000010001010101000001011111111111111111101100001011101
+11111011101011111011111110000000000000001101100001011101
+10001010001000100010000011111111111111111100110011011101
+10111010111110101010111010010000000011111110001111011101
+10001010001000001010001010110111000001111110100101011101
+11101011101111111011101000110011001111111100110111011101
+10001000101000001010001011111111111111111111110111010001
+10111111101011101110111010100001001100000000000011011011
+10001000001000100000001011111111111101011101111001011011
+10101011111011111111101011000000000001000100010111011011
+10101000000010001000101010010111111111111111111111011011
+10101111111110101010101010110111111111111111111101011011
+10100000000000100010101011100000000000000000000011011011
+10111111111111111110011011111111111111111111111011011011
+10000011111111111111000010000000000000000000000000011001
+11111011111111111111111111111111111111111111111111111101
+11111011100001100110110111000000000000000000000111111101
+11111011101111011010000111011111111111111111110111111101
+11111011100001000010110110000111111111111111110000000001
+11111011101111011010110111101111111111111111111111111111
+11110000000000011000110000000000000000000000000000000011
+11111111111111111111111111111111111111111111111111111111
+```
+
+找到 `(1,1)` 为起点，又考虑到
+
+```c
+if (n0x37 == 15 && n32 == 32)
+```
+
+推测并验证终点位于 `(15, 32)`。直接把这些东西在 Maze Solver 中输入，修改一下字符对应，然后开始计算即可——找到最短路径
+
+```plain
+ssddddwwddssddddssddssssddwwddwwddwwwwddddssssaassssaaaassaassaawwaawwwwaaaassddssaassddssssaaaassddddddwwwwddddssddddwwddwwaawwddddssssssssssssaaasssdddssssaassssaaaassaassaawwaawwwwaaaassddssaassddssssaaaassddddddwwwwddddssddddwwddwwaawwddddssssssssssssaaawawwwaassaawwaassaaaaaaaaaawwwwaassssssddddssssssdddddddddwwdddssddwwwdddsssdddddwwawwddddddddddddddddddddssddddddddwwwwawwwwwwwwdwwwwwwwwwwwaawwdwwwwwwwwwwdwwwwwwaaaasssssssssssssssssssssssssssssssssssssaaawwaaaaaaaaaaaaaaaaaaawwwddddddddwwddddddddddwwwawaawawwwwwwwwwwwwwddwwwwaassaawwaassaaaaaaaaaawwwwaawwddwwaawwdwwwdwwwwddddddddddssddddssssdsdssddssaassaaaawwaaaassssaaaaaawwddddwwwwaawwawaassdsssdd
+```
+
+输入到 `moe_maze.exe` 即可。注意到，程序返回的 `flag` 就是给用户输入套了层 `moectf{}` 😡😡😡 而且似乎只要到达了终点，后面的字符串就不会校验了？不太清楚，不过就这样吧（）下面是迷宫的可视化版本，果然还有 XDSEC 的小彩蛋呢w
+
+![迷宫的可视化](./visualized_maze.png)
+
 ## upx_revenge
 
 > [!NOTE]

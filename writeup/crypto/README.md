@@ -806,6 +806,8 @@ q = 9835790642950870702456388102541833011851580184211232019829465812360043670916
 
 > [!NOTE]
 > **FLAG:** `moectf{18272162371285}`
+>
+> 题目解答脚本（`ezBSGS_solver.py`）位于 [此处](../crypto/problems_and_solutions/ezBSGS/)。
 
 题目要求我们找到
 
@@ -813,46 +815,50 @@ $$
 13^x = 114514 \mod 100000000000099
 $$
 
-中 $x$ 的值。按照常理，这个 $x$ ~~可能不小，但绝对很大~~ 如果用普通的枚举法，事实上是难以操作的，我们直接引入 Baby-Step Giant-Step (BSGS) 算法来解决这道题目。
+中 $x$ 的最小值。按照常理，$x$ 的值应当不小，使用普通枚举法是困难的。在这里，我们使用 Baby-Step Giant-Step (BSGS) 算法解决这道题目。
 
-那么，如何理解 BSGS 算法？
-
-例如，我们想找到一个 $x$ 使得 $a^x \equiv b \pmod{p}$：想象一个圆形的巨大操场，在它上面等距环绕着编号为从 $1$ 到 $p$ 的 $p$ 个位置，而我们从位置 $1$ 开始，每乘以一次 $a$，我们就在操场上（在模 $p$ 的意义下）前进 $a$ 倍的距离，我们最终的目标是，在走 $x$ 步之后，正好能停在位置 $b$ 上。最笨的方法就是枚举，我们每走 1 次就看看当前的位置是不是位于 $b$，但这个方法太慢了——题目的问题中，$p$ 的值是 $100,000,000,000,099$……
-
-BSGS 算法就是解决这样的问题的。比如说，我们这次不亲自走了，我们派出两个人，分别叫他们 Baby-Step 和 Giant-Step，让 Baby-Step 一步一步地走，Giant-Step 一段一段地跳，然后让他们寻找一个碰头地点。这里，我们将总步数 $x$ 分为
-
-$$
-x = i \cdot m - j
-$$
-
-其中：
-
-1. $i$ 表示 Giant-Step 要跳的次数；
-2. $m$ 表示 Giant-Step 的一次跳，相当于 Baby-Step 多少次走；
-3. $j$ 表示 Baby-Step 要向回走的步数。
-
-先把这个式子代入原方程
-
-$$
-a^{i \cdot m - j} \equiv b \pmod{p}
-$$
-
-简单的移项后，有
-
-$$
-(a^m)^i \equiv b \cdot a^j \pmod{p}
-$$
-
-这便是整个算法的核心！现在，我们可以让 Baby-Step 先出发，Baby-Step 站在终点 $b$ 上，走 0 步时，记录一下「从终点走 0 步到这里」，这个位置是 $b \cdot a^0$；走 1 步时，再记录一下「从终点走 1 步到这里」，这个位置是 $b \cdot a^1$……Baby-Step 一直走到 $(m - 1)$ 步，把沿途经过的所有位置和对应的步数都记录在了一个哈希表里。这个哈希表相当于一张地图，它记录了从终点 $b$ 反向出发，走 $m$ 步以内能到达的所有位置。
-
-紧接着，我们让 Giant-Step 再出发，Giant-Step 现在站在起点 $1$ 上，跳 1 次（相当于走了 $m$ 步）后，Giant-Step 会拿出这张地图检验自己所在的位置是不是位于地图上：如果是，那就结束；如果不是，那就再跳一次……Giant-Step 会一直跳，直到跳完第 $i$ 次后，突然发现自己所在的位置被 Baby-Step 标记过！这样，我们就得到了：Giant-Step 从起点 $1$ 跳了 $i$ 次 $m$ 步后到达了这里，而 Baby-Step 从终点 $b$ 往回走了 $j$ 步后也到达了这里！我们便能用这 $i$、$m$ 和 $j$ 算出总步数 $x$ 了。
-
-暴力枚举的复杂度是 $O(p)$，而若使用 BSGS 算法，考虑到 Baby-Step 建立哈希表和 Giant-Step 寻找哈希表，各自最多只需要 走/跳 $m$ 次，我们取 $m = \lceil \sqrt{p} \rceil$，那么总共的计算量最多是 $2 \sqrt{p}$，将复杂度直接降到了 $O(\sqrt{p})$！在我们的问题中，$p$ 的值大约为 $10^{14}$，但 $\sqrt{p}$ 的值仅为 $10^7$，可以认为是容易计算的。
+> [!TIP]
+>
+> **Baby-Step Giant-Step (BSGS) 算法**
+>
+> 例如，现在我们想要找到最小的 $x$ 使得 $a^x \equiv b \pmod{p}$. 我们不妨想象一个巨大的操场，其上等距排列着从 $1$ 到 $p$ 的 $p$ 个位置，起始时我们站在位置 $1$（单位元）. $x$ 从 $0$ 开始，每增加 $1$，我们就从现在的位置 $r$ **前进一次** 到 $ar \bmod p$；该过程将始终进行，直到在前进 $x$ 次后，我们停在了位置 $b$ 上. 最暴力的方法即为枚举，但对于本题而言，$p$ 的值为 $100,000,000,000,099$，在这样大的操场上枚举是较为困难的.
+>
+> BSGS 算法可以解决这样的问题. 假如现在我们向操场派出两个人，Baby-Step 和 Giant-Step，让他们帮助我们完成在操场上行走. 值得注意的是，两个人的行走策略有所差异：**Baby-Step 每次行动仅前进一次，但 Giant-Step 每次行动可前进多次.** 我们让 Baby-Step 和 Giant-Step 分别从终点和起点出发，他们在操场上各自前进；当他们相遇的时候，我们取 Giant-Step 从起点到相遇点的路程和 Baby-Step 从终点到相遇点的路程，只需对两者作差，即得到我们前进的路程，并可以以此推导出前进的次数.
+>
+> 这里，我们将总前进次数 $x$ 分为
+>
+> $$
+> x = i \cdot m - j
+> $$
+>
+> 其中，$i$ 表示 Giant-Step 的行动次数，$m$ 表示 Giant-Step 的一次行动前进多少次，$j$ 表示 Baby-Step 的前进次数. 通常取 $m$ 为 $\lceil \sqrt{p} \rceil$. 我们将上述式子先代入原方程中，有
+>
+> $$
+> a^{i \cdot m - j} \equiv b \pmod{p}
+> $$
+>
+> 化简并在等号两边同乘以 $a^j$，得
+>
+> $$
+> (a^m)^i \equiv b \cdot a^j \pmod{p}
+> $$
+>
+> 这个式子是算法的核心. $\equiv$ 的前半部分显示了 Giant-Step 的行动，后半部分显示了 Baby-Step 的行动. 对于 Baby-Step，ta 起初站在终点 $b$ 上，并使用一张哈希表记录着 ta 前进的全过程：前进 $0$ 次时，ta 记录「前进 $0$ 次到达了 $b \cdot a^0 \bmod p$」；前进 $1$ 次时，ta 记录「前进 $1$ 次到达了 $b \cdot a^1 \bmod p$」……Baby-Step 一直如此前进直到 $(m - 1)$ 次，ta 将这 $m$ 对 前进次数-到达位置 的关系全部记录在了一张哈希表里. 现在，这个哈希表则类似于一张地图，它记录了从终点 $b$ 出发，前进 $m$ 次之内能到达的所有位置.
+>
+> 下面，我们让 Giant-Step 出发，ta 站在起点 $1$ 上. 行动 $1$ 次（前进 $m$ 次）时，Giant-Step 对照哈希表以检验自己现在所处的位置 $(a^m)^1 \bmod p$ 是否位于哈希表内：如果有，则停止；如果否，则继续行动 $1$ 次. Giant-Step 将一直行动，直到第 $i$ 次行动时，ta 处于的位置 $(a^m)^i \bmod p$ 恰好位于哈希表内. 这样，我们便知道了：Giant-Step 从起点 $1$ 出发，行动 $i$ 次（前进 $im$ 次）后到达了相遇点；Baby-Step 从终点 $b$ 出发，前进 $j$ 次后也到达了相遇点. 因此，若我们从起点出发，只需前进
+>
+> $$
+> x = i \cdot m - j \text{ (times)}
+> $$
+>
+> 即可到达终点.
+>
+> 传统暴力枚举算法的复杂度应为 $O(p)$，而 BSGS 算法考虑到 Baby-Step 和 Giant-Step 分别建立和查询哈希表，各自只需要行动至多 $m$ 次，取 $m = \lceil \sqrt{p} \rceil$，则总共的计算量至多为 $2 \sqrt{p}$，这将复杂度降低到了 $O(\sqrt{p})$。在我们的问题中，$p$ 的值大约为 $10^{14}$，但 $\sqrt{p}$ 的值仅为 $10^7$，可以认为 BSGS 算法是容易计算的。
 
 编写 Python 脚本如下：
 
 ```python
-"""bsgs_solver.py
+"""ezBSGS_solver.py
 
 该 Python 脚本供 MoeCTF 2025 的 Crypto 赛道中，「ezBSGS」题目使用。
 由 星澜音 在 Gemini 和 DeepSeek 的帮助下编写。
@@ -861,49 +867,58 @@ $$
 import math
 
 
-def bsgs(a, b, p):
-    """调用 Baby-Step Giant-Step 算法求解问题。"""
+def bsgs(a: int, b: int, p: int) -> int | None:
+    """该函数使用 Baby-Step Giant-Step 算法解决 `a^x equiv b (mod p)` 问题。
 
-    # 计算 Giant-Step 一次跳的步数。
+    Args:
+        a (int): 底数
+        b (int): 结果
+        p (int): 模数
+
+    Returns:
+        int | None: 返回计算出的 `x`。若未计算出 `x`，则返回 `None`。
+    """
+
+    # 计算 Giant-Step 行动一次的前进次数，使用 `m = ceil(sqrt(p))`
     m = int(math.sqrt(p)) + 1
-    print(f"👣 计算得到 Giant-Step 一次跳的步数为 {m}\n")
+    print(f"👣 计算得到 Giant-Step 行动一次，前进的次数为 {m}\n")
 
-    # 计算 Baby-Step 并存入哈希表。
-    print("------ 下面开始 Baby-Step 的计算 ------")
+    # 计算 Baby-Step 的前进，并计入哈希表
+    print("========== 下面开始 Baby-Step 的前进 ==========")
     baby_steps = {}
     val = b
     for j in range(m):
-        # `baby_steps`` 的键是位置，值是步数 `j`。
+        # `baby_steps` 的键是位置 `(b * a^j) mod p`，值是前进次数 `j`
         baby_steps[val] = j
         val = (val * a) % p
-    print(f"😋 已完成 {len(baby_steps)} 个小步计算，并将结果存入哈希表。")
-    print("------ 上面完成 Baby-Step 的计算 ------")
+    print(f"😋 已完成 {len(baby_steps)} 次 Baby-Step 前进，并将结果存入哈希表。\n")
 
-    # 计算 Giant-Step 并与哈希表比对。
-    print("\n------ 下面开始 Giant-Step 的计算 ------")
-    # 计算 Giant-Step 的等效步数。
+    # 计算 Giant-Step 的行动，并检索哈希表以尝试匹配
+    print("========== 下面开始 Giant-Step 的行动 ==========")
+
+    # 计算 Giant-Step 的第 1 次行动
     giant_stride = pow(a, m, p)
     giant_val = giant_stride
     for i in range(1, m + 1):
-        # 在哈希表中查找当前 Giant-Step 计算出的值。
+        # 在哈希表中查找当前 Giant-Step 前进到的位置
         if giant_val in baby_steps:
             j = baby_steps[giant_val]
             x = i * m - j
-            print(f"😰 在第 i = {i} 次 Giant-Step 时匹配成功！")
+            print(f"😰 在第 i = {i} 次 Giant-Step 行动时匹配成功！")
             print(f"😎 Giant-Step 计算结果: {giant_val}")
-            print(f"👀 哈希表中匹配的 Baby-Step 步数: {j}")
+            print(f"👀 哈希表中匹配的 Baby-Step 前进次数: {j}")
             print(f"🥰 计算最终解 x = {i} * {m} - {j} = {x}")
             return x
 
-        # 若匹配失败，则继续查找。
+        # 若匹配失败，则继续查找
         giant_val = (giant_val * giant_stride) % p
 
-    # 如果循环结束还未匹配成功，则可能无解。
+    # 如果循环结束仍未匹配成功，则可能无解
     return None
 
 
 if __name__ == "__main__":
-    # 在这里更改 `BASE`、`RESULT` 和 `MODULUS` 的值。
+    # 定义 `BASE`、`RESULT` 和 `MODULUS` 的值
     BASE = 13
     RESULT = 114514
     MODULUS = 100000000000099
@@ -912,61 +927,62 @@ if __name__ == "__main__":
     print(f"a = {BASE}")
     print(f"b = {RESULT}")
     print(f"p = {MODULUS}")
-    print("🤔 正在求解，请等待……")
+    print("🤔 正在求解，请等待……\n")
 
     # 调用 BSGS 算法求解
     x = bsgs(BASE, RESULT, MODULUS)
 
-    print("\n------ 🧮 最终结果 ⏱️ ------")
+    print("\n================ 🧮 最终结果 ⏱️ ================")
     if x is not None:
-        print(f"🎮 方程的解 x = {x}")
+        print(f"🎮 方程的解 x = {x}\n")
 
         # 验证结果
-        print("\n------ 🔍 验证解 🤔 ------")
+        print("================= 🔍 验证解 🤔 =================")
         verification = pow(BASE, x, MODULUS)
         print(f"计算 {BASE}^{x} mod {MODULUS}……")
         print(f"计算结果: {verification}")
         print(f"目标结果: {RESULT}")
         if verification == RESULT:
-            print(f"✅ 验证成功！方程的解确为 {x}。")
+            print(f"✅ 验证成功！方程的解确为 {x}。\n")
+            print("`flag`: moectf{" + str(x) + "}")
         else:
-            print("❌ 验证失败。")
+            print("❌ 验证失败。\n")
     else:
-        print("😭 方程无解。")
+        print("😭 方程无解。\n")
 ```
 
 运行，输出
 
 ```plain
-PS S:\MoeCTF\Crypto> python .\bsgs_solver.py
+PS S:\MoeCTF_2025_writeup\writeup\crypto\problems_and_solutions\ezBSGS> python .\ezBSGS_solver.py
 将使用下面的参数，以 BSGS 算法求解目标的 `x`：
 a = 13
 b = 114514
 p = 100000000000099
 🤔 正在求解，请等待……
-👣 计算得到 Giant-Step 一次跳的步数为 10000001
 
------- 下面开始 Baby-Step 的计算 ------
-😋 已完成 10000001 个小步计算，并将结果存入哈希表。
------- 上面完成 Baby-Step 的计算 ------
+👣 计算得到 Giant-Step 行动一次，前进的次数为 10000001
 
------- 下面开始 Giant-Step 的计算 ------
-😰 在第 i = 1827217 次 Giant-Step 时匹配成功！
+========== 下面开始 Baby-Step 的前进 ==========
+😋 已完成 10000001 次 Baby-Step 前进，并将结果存入哈希表。
+
+========== 下面开始 Giant-Step 的行动 ==========
+😰 在第 i = 1827217 次 Giant-Step 行动时匹配成功！
 😎 Giant-Step 计算结果: 30358557215417
-👀 哈希表中匹配的 Baby-Step 步数: 9455932
+👀 哈希表中匹配的 Baby-Step 前进次数: 9455932
 🥰 计算最终解 x = 1827217 * 10000001 - 9455932 = 18272162371285
 
------- 🧮 最终结果 ⏱️ ------
+================ 🧮 最终结果 ⏱️ ================
 🎮 方程的解 x = 18272162371285
 
------- 🔍 验证解 🤔 ------
+================= 🔍 验证解 🤔 =================
 计算 13^18272162371285 mod 100000000000099……
 计算结果: 114514
 目标结果: 114514
 ✅ 验证成功！方程的解确为 18272162371285。
-```
 
-得到结果，嵌套 `moectf{}` 即为答案。
+`flag`: moectf{18272162371285}
+```
 
 ## ez_square
 

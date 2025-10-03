@@ -1425,6 +1425,8 @@ candidate flag (utf-8): moectf{D0_Y0u_kn0w_wh@7_4_de7erm1n@n7_1s!}
 
 > [!NOTE]
 > **FLAG:** `moectf{Y0u_h@v3_ju5t_s01v3d_7h1s_pr0b13m!}`
+>
+> 题目源文件（`ezlegendre.py`）和解答脚本（`ezlegendre_solver.py`）位于 [此处](../crypto/problems_and_solutions/ezlegendre/)。
 
 分析题目给出的 Python 脚本（排版有优化）：
 
@@ -1450,51 +1452,199 @@ def encrypt_flag(flag):
 print(encrypt_flag(flag))
 ```
 
-首先，程序将 `flag` 的每个字节转换为 8 位二进制字符串（不足 8 位的在前面补 0），随后拼接这些二进制字符串为一个大的二进制字符串 `plaintext`。随后，程序对 `plaintext` 中的每一个二进制比特 `b` 进行如下操作：
+脚本从 `secret.py` 中取出 `flag` 后，将 `flag` 的每个字节转换为 8 位二进制字符串（不足 8 位的在前面补 `0`），随后拼接这些二进制字符串为一个大的字符串 `plaintext`。随后，脚本对 `plaintext` 中的每一个二进制比特 `b` 进行如下操作：
 
-1. 生成一个 16 位的随机素数 `e`；
-2. 生成一个随机整数 `d`，这里 $1 \leq d \leq 10$；
-3. 计算 $n = (a + b \cdot d)^e \mod p$。我们可以根据 `b` 来分情况讨论：若 $b = 0$ 则 $n = a^e \mod p$；若 $b = 1$ 则 $n = (a + d)^e \mod p$；
+1. 随机生成一个 16 位的素数 $e$；
+2. 生成一个随机整数 $d$，这里 $1 \leq d \leq 10$；
+3. 计算 $n = (a + b \cdot d)^e \bmod p$。考虑到二进制比特 `b` 非 `0` 即 `1`，我们可以进行分类讨论：若 $b = 0$ 则 $n = a^e \bmod p$；若 $b = 1$ 则 $n = (a + d)^e \bmod p$；
 4. 将 `n` 追加到 `ciphertext` 中。
 
-既然题目已经提示了 Legendre Symbol，我们就看看它如何被用于攻击这一算法。
+在了解 Legendre Symbol 前，我们需要一些前置数学知识。
 
-先了解一个概念「二次剩余」。在通常的数学中，我们所说的「平方根」是指求一个数 $x$ 使得 $x^2 = a$，其中 $x$ 是实数或复数。不过，在模运算中，我们更关心同余关系：在数论中，给定一个奇素数 $p$ 和一个整数 $a$，若存在整数 $x$ 使得
+> [!TIP]
+>
+> **二次剩余**
+>
+> 在通常的数学中，我们所说的「平方根」是指求一个数 $x$ 使得 $x^2 = a$，其中 $x$ 是实数或复数。模运算中亦有这样的说法，不过在模运算中，我们更关心同余关系：即，给定一个奇素数 $p$ 和一个整数 $a$，若存在整数 $x$ 使得
+>
+> $$
+> x^2 \equiv a \pmod{p}
+> $$
+>
+> 我们就说 $a$ 是模 $p$ 下的二次剩余，否则是二次非剩余。正因如此，二次剩余可以被认为是讨论求模意义下开平方运算的可行性。并不是所有数在模 $p$ 意义下都能开平方，只有那些二次剩余的 $a$ 才具有模 $p$ 意义下的平方根。
+>
+> **Legendre Symbol（勒让德符号）**
+>
+> Legendre Symbol 是数论中的一个符号，表示一个整数是否是某个素数模下的二次剩余。给定一个素数 $p$ 和整数 $a$，Legendre Symbol 定义为：
+>
+> $$
+> \left( \frac{a}{p} \right) =
+> \begin{cases}
+> 1, & \text{if } \exists x \text{ such that } x^2 \equiv a \pmod{p} \\
+> -1, & \text{if } \nexists x \text{ such that } x^2 \equiv a \pmod{p} \\
+> 0, & \text{if } a \equiv 0 \pmod{p}
+> \end{cases}
+> $$
+>
+> **欧拉准则（Euler's criterion）**
+>
+> 欧拉准则是数论中的一个重要定理，用于判断一个整数是否为模奇素数的二次剩余。设 $p$ 是一个奇素数，$a$ 是一个不被 $p$ 整除的整数，则欧拉准则表述为
+>
+> $$
+> a^{\frac{p - 1}{2}} \equiv \left( \frac{a}{p} \right) \pmod{p}
+> $$
+>
+> 下面我们给出一个证明. 我们在前文已经证明过费马小定理了，即，对于素数 $p$ 和整数 $a$ 满足 $p \nmid a$，有
+>
+> $$
+> a^{p - 1} \equiv 1 \pmod{p}
+> $$
+>
+> 由于 $p$ 是奇素数，$p - 1$ 是偶数，因此 $\frac{p - 1}{2}$ 是整数。变形得到
+>
+> $$
+> a^{p - 1} = a^{2 \cdot \frac{p-1}{2}} = (a^{\frac{p-1}{2}})^2
+> $$
+>
+> 之后，我们就可以将费马小定理写为
+>
+> $$
+> (a^{\frac{p - 1}{2}})^2 \equiv 1 \pmod{p}
+> $$
+>
+> 考虑到模 $p$ 下方程 $x^2 \equiv 1 \pmod{p}$ 的解仅有 $x \equiv 1$ 或 $x \equiv -1$，所以上面的方程的解仅可能有
+>
+> $$
+> a^{\frac{p - 1}{2}} \equiv \pm 1 \pmod{p}
+> $$
+>
+> **（1）** 若 $a$ 是模 $p$ 的二次剩余：
+>
+> 则存在整数 $x$ 使得 $x^2 \equiv a \pmod{p}$. 于是
+>
+> $$
+> a^{\frac{p-1}{2}} \equiv (x^2)^\frac{p-1}{2} \equiv x^{p-1} \pmod{p}
+> $$
+>
+> 由费马小定理，$x^{p-1} \equiv 1 \pmod{p}$，因此
+>
+> $$
+> a^{\frac{p-1}{2}} \equiv 1 \pmod{p}
+> $$
+>
+> 这对应 $\left( \frac{a}{p} \right) = 1$ 的情况.
+>
+> **（2）** 若 $a$ 不是模 $p$ 的二次剩余：
+>
+> 模 $p$ 的乘法群 $\mathbb{Z}_p^*$ 由所有与 $p$ 互质的整数模 $p$ 构成，是一个阶为 $p - 1$ 的循环群，存在一个原根 $g$ 使得
+>
+> $$
+> \mathbb{Z}_p^* = \{ g^0, g^1, g^2, \cdots, g^{p-2} \}
+> $$
+>
+> 其中每个元素都能被唯一表示为 $g^k \bmod p$，且 $k = 0, 1, \cdots, p-2$.
+>
+> 我们说一个元素 $a \in \mathbb{Z}_p^*$ 是二次剩余，当且仅当存在整数 $x$ 使得 $x^2 \equiv a \pmod{p}$；设 $a = g^k$，前式变为 $x^2 \equiv g^k \pmod{p}$；再设 $x = g^j$，代入得
+>
+> $$
+> (g^j)^2 = g^{2j} \equiv g^k \pmod{p}
+> $$
+>
+> 根据循环群的性质，等价于 $2j \equiv k \pmod{p-1}$.（这里 $p-1$ 是因为原根 $g$ 的指数是在模 $p-1$ 的循环群中运算的.）根据线性同余方程的基本定理，该方程有解当且仅当 $\gcd(2, p-1) \mid k$. 由于 $p$ 是素奇数，$p-1$ 是偶数，故
+>
+> $$
+> \gcd(2, p-1) = 2
+> $$
+>
+> 也就是说，方程有解当且仅当 $k$ 是偶数.
+>
+> 故，$g^i$ 中二次剩余的元素对应指数 $k$ 为偶数的元素，有 $g^0, g^2, \cdots, g^{p-3}$ 等，共 $\frac{p-1}{2}$ 个；非二次剩余的则对应指数 $k$ 为奇数的元素，有 $g^1, g^3, \cdots, g^{p-2}$ 等，同样共 $\frac{p-1}{2}$ 个.
+>
+> 我们考虑多项式 $f(x) = x^{\frac{p-1}{2}} - 1 \bmod p$，这是一个次数为 $\frac{p-1}{2}$ 的多项式，因此在模 $p$ 下最多有 $\frac{p-1}{2}$ 个根. 从（1）中我们知悉，这些二次剩余都是 $f(x)$ 的根；既然有 $\frac{p-1}{2}$ 个二次剩余，那么它们则会全部是 $f(x)$ 的根. 因此，对于非二次剩余的 $a$，不可能有 $a^{\frac{p-1}{2}} \equiv 1 \pmod{p}$，否则根的数量会超出最大限制. 考虑到仅能有 $a^{\frac{p - 1}{2}} \equiv \pm 1 \pmod{p}$，因此该情况下
+>
+> $$
+> a^{\frac{p-1}{2}} \equiv -1 \pmod{p}
+> $$
+>
+> 这便对应了 $\left( \dfrac{a}{p} \right) = -1$ 的情况.
+>
+> 至此，我们证明了欧拉准则。
+>
+> **Legendre Symbol 的乘法性质**
+>
+> Legendre Symbol 具有这样的乘法性质，即，在 Legendre Symbol 下满足：
+>
+> $$
+> \left( \frac{ab}{p} \right) \equiv \left( \frac{a}{p} \right) \cdot \left( \frac{b}{p} \right) \pmod{p}
+> $$
+>
+> 我们给出一个证明. 由欧拉准则，我们有
+>
+> $$
+> \left( \frac{a \cdot b}{p} \right) \equiv (a \cdot b)^{\frac{p = 1}{2}} \pmod{p}
+> $$
+>
+> 观察 $\equiv$ 之后的部分，由指数运算的性质，可变形为
+>
+> $$
+> \left( \frac{a \cdot b}{p} \right) \equiv a^{\frac{p = 1}{2}} \cdot b^{\frac{p = 1}{2}} \pmod{p}
+> $$
+>
+> 又
+>
+> $$
+> \left( \frac{a}{p} \right) \equiv a^{\frac{p - 1}{2}} \pmod{p},\quad
+> \left( \frac{b}{p} \right) \equiv b^{\frac{p - 1}{2}} \pmod{p}
+> $$
+>
+> 因此
+>
+> $$
+> \left( \frac{ab}{p} \right) \equiv \left( \frac{a}{p} \right) \cdot \left( \frac{b}{p} \right) \pmod{p}
+> $$
+>
+> 注意到 Legendre Symbol 的值仅为 $-1, 0, 1$ 中的任一，考虑到 $p$ 是奇素数，即 $p > 2$，模 $p$ 下这些值是唯一的（即 $-1 \not\equiv 1 \pmod{p}$），它的值便可以确定了。因此，我们写为
+>
+> $$
+> \left( \frac{ab}{p} \right) = \left( \frac{a}{p} \right) \cdot \left( \frac{b}{p} \right)
+> $$
+>
+> 这便证明了 Legendre Symbol 的乘法性质。由 Legendre Symbol 的乘法性质，推出 $a^e$ 的二次剩余性质
+>
+> $$
+> \left( \frac{a^e}{p} \right) = \left( \frac{a}{p} \right)
+> $$
+>
+> 是平凡的，唯一需要注意的是，$e$ 在这里必须为奇数，以满足等式两边奇偶性的需求。
 
-$$
-x^2 \equiv a \pmod{p}
-$$
-
-我们就说 $a$ 是模 $p$ 下的二次剩余，否则是二次非剩余。这样看来，二次剩余可以认为是在讨论求模意义下开平方运算的可行性。为什么说是「可行性」呢？如我们所见，并不是所有数在模 $p$ 下都能开平方，只有那些是二次剩余的 $a$ 才具有平方根模 $p$。
-
-现在我们引入 Legendre Symbol，它是数论中的一个符号，表示一个整数是否是某个素数模下的二次剩余。给定一个素数 $p$ 和整数 $a$，Legendre Symbol 定义为：
-
-$$
-\left( \frac{a}{p} \right) =
-\begin{cases}
-1, & \text{如果 } a \text{ 是模 } p \text{ 的二次剩余（即存在 } x \text{ 使得 } x^2 \equiv a \pmod{p} ) \\
--1, & \text{如果 } a \text{ 不是模 } p \text{ 的二次剩余（即不存在 } x \text{ 使得 } x^2 \equiv a \pmod{p} ) \\
-0, & \text{如果 } a \equiv 0 \pmod{p}
-\end{cases}
-$$
-
-为什么说它的运用可以攻破这套加密算法的弱点呢？我们考虑：指数 $e$ 是一个 16 位的素数，而除 $2$ 之外的所有素数都是奇数，所以 $e$ 一定是奇数。我们知道，对于奇数 $e$，一个数的 $e$ 次方与其本身在模奇素数 $p$ 下的二次剩余性质相同，即，在 Legendre Symbol 下满足：
+回到本题的场景。我们发现：指数 $e$ 是一个 16 位的素数，而除 $2$ 之外的所有素数都是奇数，所以 $e$ 一定是奇数。我们知道，对于奇数 $e$，一个数的 $e$ 次方与其本身在模奇素数 $p$ 下的二次剩余性质相同，即，在 Legendre Symbol 下满足：
 
 $$
 \left( \frac{a^e}{p} \right) = \left( \frac{a}{p} \right)
 $$
 
-这个性质将在下文证明。总之，我们考虑每一个密文 $n$，计算其 $\left( \dfrac{n}{p} \right)$：
+我们考虑每一个密文 $n$，计算其 $\left( \dfrac{n}{p} \right)$：考虑到 $\left( \dfrac{a + bd}{p} \right) \in \{1, -1\}$（这里假设了 $a + bd \not \equiv 0 \pmod{p}$，这种情况应当不会出现），而 $e$ 是奇数，所以
 
-1. 若 $\left( \dfrac{n}{p} \right) \not = \left( \dfrac{a}{p} \right)$ 则必然有 $b = 1$。因为，若 $b = 0$，则根据 $a^e$ 的 Legendre Symbol 性质，必然有 $\left( \dfrac{n}{p} \right) = \left( \dfrac{a}{p} \right)$。
-2. 若 $\left( \dfrac{n}{p} \right) = \left( \dfrac{a}{p} \right)$，则 $b$ **应该** 为 $0$。至于我们为什么说是「应该」，因为星澜音自己也拿不准，在任意符合条件的 $a$ 和 $p$ 的情况下，是否始终有 $\left( \dfrac{a + d}{p} \right) = -1, \forall d \in \mathbb{Z} \text{ and } d \in [1, 10]$。这可能需要一定数论知识才能证明 <sub>对不起星澜音这次真不会证明了😭</sub>，但至少题目给出的 $a$ 和 $p$ 经过星澜音手动校验后，确实满足我们刚刚的假设。
+$$
+\left( \frac{n}{p} \right) = n^{\frac{p-1}{2}}
+= ((a + bd)^e)^{\frac{p-1}{2}} = ((a + bd)^\frac{p-1}{2})^e = \left( \frac{a + bd}{p} \right)
+$$
 
-这样，我们就逆推出了 `plaintext` 的内容！编写 Python 脚本如下：
+也就是
+
+$$
+\boxed{ \left( \frac{n}{p} \right) = \left( \frac{a + bd}{p} \right). }
+$$
+
+1. 若 $\left( \dfrac{n}{p} \right) \not = \left( \dfrac{a}{p} \right)$ 则必然有 $b = 1$。这在上式中是显然的，因为，若 $b = 0$，则根据 $a^e$ 的 Legendre Symbol 性质，必然有 $\left( \dfrac{n}{p} \right) = \left( \dfrac{a}{p} \right)$。
+2. 若 $\left( \dfrac{n}{p} \right) = \left( \dfrac{a}{p} \right)$，则 $b$ **应该** 为 $0$。至于我们为什么说是「应该」，因为它实取决于 $\left( \dfrac{a+d}{p} \right) = \left( \dfrac{a}{p} \right)$ 是否成立，它的一般情况是无法确定的。不过，星澜音对题目给出的 $a$ 和 $p$ 进行了测试，证明了 $\left( \dfrac{a + d}{p} \right) = -1, \forall d \in \mathbb{Z} \text{ and } d \in [1, 10]$ 成立。因此在本题的情况下，我们可以放心认为 $\left( \dfrac{n}{p} \right) = \left( \dfrac{a}{p} \right)$ 时确有 $b = 0$。
+
+基于这样的想法，我们便可以编写 Python 脚本如下：
 
 ```python
-"""ez_square_solver.py
+"""ezlegendre_solver.py
 
-该 Python 脚本供 MoeCTF 2025 的 Crypto 赛道中，「ez_square」题目使用。
+该 Python 脚本供 MoeCTF 2025 的 Crypto 赛道中，「ezlegendre」题目使用。
 由 星澜音 在 Gemini 的帮助下编写。
 """
 
@@ -1581,55 +1731,6 @@ PS S:\MoeCTF\Crypto> python .\ezledengre_decrypt.py
 Flag: moectf{Y0u_h@v3_ju5t_s01v3d_7h1s_pr0b13m!}
 ==============================
 ```
-
-### Euler's criterion
-
-Euler's criterion 指出，对于奇素数 $p$ 和整数 $a$，有
-
-$$
-\left( \frac{a}{p} \right) \equiv a^{\frac{p - 1}{2}} \pmod{p}
-$$
-
-Euler's criterion 的证明需要用到 Fermat 小定理。 ~~后者星澜音不会证明，但星澜音确保后者是正确的。我们可以使用反证法：注意到，若 Euler's criterion 是错误的，则这么多年来绝对会有人推翻这一定理；但这么多年了，该定理仍未被推翻，所以它是正确的。~~
-
-### Legendre Symbol 的乘法性质
-
-$$
-\left( \frac{a \cdot b}{p} \right) \equiv (a \cdot b)^{\frac{p = 1}{2}} \pmod{p}
-$$
-
-后者由指数运算的性质，可变形为
-
-$$
-\left( \frac{a \cdot b}{p} \right) \equiv a^{\frac{p = 1}{2}} \cdot b^{\frac{p = 1}{2}} \pmod{p}
-$$
-
-又
-
-$$
-\left( \frac{a}{p} \right) \equiv a^{\frac{p - 1}{2}} \pmod{p},\quad
-\left( \frac{b}{p} \right) \equiv b^{\frac{p - 1}{2}} \pmod{p}
-$$
-
-所以
-
-$$
-\left( \frac{ab}{p} \right) \equiv \left( \frac{a}{p} \right) \cdot \left( \frac{b}{p} \right) \pmod{p}
-$$
-
-注意到 Legendre Symbol 的值仅为 $-1, 0, 1$ 中的任一，考虑到 $p$ 是奇素数，即 $p > 2$，模 $p$ 下这些值是唯一的（即 $-1 \not\equiv 1 \pmod{p}$），它的值便可以确定了。因此，我们写为
-
-$$
-\left( \frac{ab}{p} \right) = \left( \frac{a}{p} \right) \cdot \left( \frac{b}{p} \right)
-$$
-
-### $a^e$ 的二次剩余性质
-
-由 Legendre Symbol 的乘法性质，推出 $a^e$ 的二次剩余性质是显然的，唯一需要注意的是，$e$ 在这里必须为奇数，以满足等式两边奇偶性的需求。
-
-### 关于 $b = 0$ 的猜想
-
-星澜音说自己这次不会是真不会了。不过，星澜音觉得，满足模 $p$ 且可二次剩余的数，在 $p$ 为一个极大素数的情况下，分布得应该足够稀疏？至少在一个较大的尺度来看，应该不至于出现两个差小于 $10$ 的。
 
 ## 沙茶姐姐的 Fufu
 

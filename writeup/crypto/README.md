@@ -1181,6 +1181,19 @@ q 为 10407000088959425169419203940606545581520363832679548727898058943637902824
 😎 解密得到的 `flag` 是 moectf{Ma7hm4t1c5_is_@_k1nd_0f_a2t}
 ```
 
+## ez_AES
+
+> [!NOTE]
+>
+> **FLAG:** `moectf{Th1s_1s_4n_E4ZY_AE5_!@#}`
+>
+> 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
+>
+> 1. 程序内的 `key = b'Slightly different from the AES.'` 是公开的，这意味着只需要复现该算法就可以离线解密。
+> 2. `shift_rows` 的实现存在 bug，其 `grid = ...` 行在循环内部将 `grid` 局部变量重新绑定为新列表。第一次循环之前，`grid` 指向传入的 `bytearray`，第一次 `grid[i::4] = ...` 会直接改变传入的 `bytearray`，但随后 `grid` 被重新绑定为一个新列表；后续循环对 `grid` 的修改仅发生在这个新列表上，而不会作用到原始 `bytearray` 上。这导致传入的 `bytearray` 仅在 `i=0` 次的 `slice` 赋值时被改动，而 `i=0` 的旋转本身则为 rotate by 0，导致 `shift_rows` 实质上变成了 no-op。
+>
+> 故只需在自定义 AES 解密算法中将 `shift_rows` 函数 `pass` 掉即可。
+
 ## ez_det
 
 > [!NOTE]
@@ -1748,10 +1761,46 @@ Flag: moectf{Y0u_h@v3_ju5t_s01v3d_7h1s_pr0b13m!}
 >
 > 接下来 $T$ 组数据表示每一个子问题，每组数据第一行两个整数 $N$ 和 $M$，接下来 $N$ 行每行两个整数 $c_i$ 和 $\omega_i$ 描述一个 Fufu。
 
+<!---->
+
+> [!NOTE]
+>
+> 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
+>
+> 简易的 0-1 背包问题。
+
+## Prime_in_prime
+
+> [!NOTE]
+>
+> 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
+>
+> 从 $N = 2 \times h \times g + 1$ 中计算出 $h$，引入 $h$ 以解出 $a$ 和 $b$，使用 $a$ 和 $b$ 计算出 $p$ 和 $q$，以计算 $\phi(N) = (p-1) \times (q-1)$，求出 $e$ 在模 $\phi(N)$ 下的逆元私钥 $d$，使用 $d$ 对 $\text{enc}$ 解密即可。
+
+## ez_lattice
+
+> [!NOTE]
+>
+> 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
+>
+> 该问题可化归为一个格（Lattice）中的 **最短向量问题（Shortest Vector Problem, SVP）**。通过使用 LLL 算法可以解决。本题使用了 SageMath 环境。
+
+## happyRSA
+
+> [!NOTE]
+>
+> 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
+>
+> $$
+> \text{power\_tower\_mod}(a, k, m) \equiv 1 + \text{n\_phi} + \text{n\_phi}^2 \pmod{\text{n\_phi}^3}
+> $$
+
 ## 神秘数字太多了
 
 > [!NOTE]
 > **FLAG:** `moectf{7718260004383}`
+>
+> 由于时间紧迫，本题目的详细 writeup 将于赛后补充。
 
 对于
 
@@ -1818,3 +1867,13 @@ $$
 ### 为何我们说解是唯一的？
 
 之后补充。
+
+## Legendre_revenge
+
+> [!NOTE]
+>
+> 题目中的 `Ledengre` 是 typo，在该 writeup 中已纠正。
+>
+> 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
+>
+> 题目将 $16 \times 2$ 个微比特信息打包成一个小于 $2^{16}$ 的整数 `key` 并用一个大模 $p$ 验证 `pow(key, 2*e, p_) == V`，所以 `key` 可穷举；另一端将最终的 32 字节用取模平方隐藏为 `text`，可以还原出 2 种候选根；剩下的就是按轮逆向：每个输出字节仅依赖一个 AES 加密输出字节和一位 `bit`，因此可以逐个字枚举候选并组合成 16 字节 `enc`、AES 解密检验并回溯 10 轮以得到原始 `flag`。

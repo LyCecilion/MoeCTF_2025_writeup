@@ -2973,35 +2973,6 @@ io.interactive()
 
 大沙币零音被这道题卡了十几天，今天上线 debug 半天发现忘记给 `ret_addr` 换成 `real_ret_addr` 了😇😇😇这辈子真是被 CTF 给毁了你们知道吗。
 
-## easylibc
-
-> [!NOTE]
-> **FLAG:** `moectf{???}`
-
-反编译题目给定的 `pwn` 文件：
-
-```c
-int __fastcall main(int argc, const char **argv, const char **envp)
-{
-    setbuf(_bss_start, 0LL);
-    printf("What is this?\nHow can I use %p without a backdoor? Damn!\n", &read);
-    vuln();
-    puts("Something happening");
-    return 0;
-}
-```
-
-```c
-ssize_t vuln()
-{
-    _BYTE buf[32]; // [rsp+0h] [rbp-20h] BYREF
-
-    return read(0, buf, 0x60uLL);
-}
-```
-
-可以看到 `printf` 打印出了 `read()` 的地址。那我们是否能像之前那样，直接用 `read()` 和偏移量算出 `system` 的地址呢？遗憾地，这一次 `&read` 指向的，是 PLT 中 `read()` 函数的地址。在「认识 libc」题目中，我们曾经使用 `printf()` 自指以获得其自身的真实内存地址，那是因为 `printf()` 本身被触发的时候，就已经触发了 PLT 向 GOT 写入真实内存地址的请求，因此我们得到的是 `printf` 在内存中的真实地址（已经写入 GOT 了）。但这一次，`read` 函数仍然 **没有** 被调用过，因此使用 `&read` 得到的并非其真实内存地址，而是指向 PLT 中 `read()` 的地址。
-
 ## ezpivot
 
 > [!NOTE]

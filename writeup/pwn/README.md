@@ -1754,7 +1754,7 @@ io.sendline(PAYLOAD)
 io.interactive()
 ```
 
-`PAYLOAD += p64(0x40101a)` 是经验主义的 `ret`。总之能跑起来就行。
+`PAYLOAD += p64(0x40101a)` 是经验主义的 `ret`。总之能跑起来就行。但星澜音还是想吐槽：**一秒变一次到底是谁的主意** 😡 星澜音运行了 26 次才成功 👊
 
 ## fmt
 

@@ -1193,6 +1193,8 @@ q 为 10407000088959425169419203940606545581520363832679548727898058943637902824
 > 2. `shift_rows` 的实现存在 bug，其 `grid = ...` 行在循环内部将 `grid` 局部变量重新绑定为新列表。第一次循环之前，`grid` 指向传入的 `bytearray`，第一次 `grid[i::4] = ...` 会直接改变传入的 `bytearray`，但随后 `grid` 被重新绑定为一个新列表；后续循环对 `grid` 的修改仅发生在这个新列表上，而不会作用到原始 `bytearray` 上。这导致传入的 `bytearray` 仅在 `i=0` 次的 `slice` 赋值时被改动，而 `i=0` 的旋转本身则为 rotate by 0，导致 `shift_rows` 实质上变成了 no-op。
 >
 > 故只需在自定义 AES 解密算法中将 `shift_rows` 函数 `pass` 掉即可。
+>
+> 题目源文件（`ez_AES.py`）和解答脚本（`ez_AES_solver.py`）位于 [此处](../crypto/problems_and_solutions/ezAES/)。
 
 ## ez_det
 
@@ -1768,6 +1770,8 @@ Flag: moectf{Y0u_h@v3_ju5t_s01v3d_7h1s_pr0b13m!}
 > 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
 >
 > 简易的 0-1 背包问题。
+>
+> 题目解答脚本（`sandtea_fufu_solver.py`）位于 [此处](../crypto/problems_and_solutions/sandtea_fufu/)。
 
 ## Prime_in_prime
 

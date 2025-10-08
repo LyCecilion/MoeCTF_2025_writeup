@@ -1172,7 +1172,7 @@ if ( v6 < (__int64)(int)v5 )
 
 对 `GEOI^LQbj\` 先转换回 Hex 后取 `0x2A` 异或，再转换回 ASCII 编码得到 `moectf{H@v`，初见端倪！后面的 `0x1E 0x75 0x4C 0x7F 0x44 0x57` 直接取 `0x2A` 异或后转换回 ASCII 编码得到 `4_fUn}`，拼接在一起就是 `flag`。
 
-## mazegame
+## mazegame ✅
 
 > [!NOTE]
 > **FLAG** 的开头必须是 `moectf{ssddddwwddssddddssddssssddwwddwwddwwwwddddssssaassssaaaassaassaawwaawwwwaaaassddssaassddssssaaaassddddddwwwwddddssddddwwddwwaawwddddssssssssssssaaasssdddssssaassssaaaassaassaawwaawwwwaaaassddssaassddssssaaaassddddddwwwwddddssddddwwddwwaawwddddssssssssssssaaawawwwaassaawwaassaaaaaaaaaawwwwaassssssddddssssssdddddddddwwdddssddwwwdddsssdddddwwawwddddddddddddddddddddssddddddddwwwwawwwwwwwwdwwwwwwwwwwwaawwdwwwwwwwwwwdwwwwwwaaaasssssssssssssssssssssssssssssssssssssaaawwaaaaaaaaaaaaaaaaaaawwwddddddddwwddddddddddwwwawaawawwwwwwwwwwwwwddwwwwaassaawwaassaaaaaaaaaawwwwaawwddwwaawwdwwwdwwwwddddddddddssddddssssdsdssddssaassaaaawwaaaassssaaaaaawwddddwwwwaawwawaassdsssdd`，结尾必须是 `}`。
@@ -1371,7 +1371,7 @@ ssddddwwddssddddssddssssddwwddwwddwwwwddddssssaassssaaaassaassaawwaawwwwaaaassdd
 
 ![迷宫的可视化](./visualized_maze.png)
 
-## upx_revenge
+## upx_revenge ❌
 
 > [!NOTE]
 > **FLAG:** `moectf{???}`
@@ -1393,7 +1393,7 @@ Unpacked 0 files.
 
 又到了我们喜闻乐见<sub>（存疑）</sub>的改壳环节。主要是这文件我直接点也打不开😨和 GPT-5 商量半天，发现是哪个结构的大小有问题，反正改了一堆是能打开了，但是那个窗口过一会自己就没了……我看 UPX 结构差不多都在，死活想不来怎么脱壳；x64dbg 还是不顺手，只好放弃了。哎😭
 
-## guess
+## guess ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{RrRRccCc44$$_w1th_fl0w3r!!_3c6a11b5}`
@@ -1514,7 +1514,19 @@ return 0;
 
 ![动态调试获得 `v21` 的值](./get_value_of_v21_via_dynamic_debugging.png)
 
-## rusty_sudoku
+## A simple program ✅
+
+稍后补。
+
+## Two cups of tea ✅
+
+还是改了 Delta。
+
+## ezandroid.pro ✅
+
+Native 层。容易的，只需要分析其 C 代码部分即可。
+
+## rusty_sudoku ✅
 
 > [!NOTE]
 > 你说得对，但是「Rust」是由 Mozilla 自主研发的一款全新零开销抽象编程语言。语言发生在一个被称作「RAII」的资源管理世界，在这里，退出作用域的对象将被授予「drop」方法，回收资源之力。你将扮演一位名为「Ferris」的神秘角色在编码的旅行中邂逅形状各异、生命周期独特的变量们，和它们一起击败强大的编译错误，找回失散的内存安全——同时，逐步发掘「Servo」的真相。<br/>

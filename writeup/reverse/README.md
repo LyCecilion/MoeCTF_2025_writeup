@@ -6,7 +6,7 @@
 
 </div>
 
-## speed
+## speed ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Just_dyn@mic_d3bugg1ng}`
@@ -15,7 +15,7 @@
 
 ![使用动态调试固定窗口](./lock_window_via_dynamic_debugging.png)
 
-## 逆向工程入门指北
+## 逆向工程入门指北 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{open_your_IDA_and_start_reverse_engineering!!}`
@@ -26,10 +26,10 @@
 
 ![检验分支关系](./check_logic.png)
 
-## base
+## base ✅
 
 > [!NOTE]
-> **FLAG:** `bW9lY3Rme1kwdV9DNG5fRzAwZF9BdF9CNDVlNjQhIX0=`
+> **FLAG:** `moectf{Y0u_C4n_G00d_At_B45e64!!}`
 
 注意到
 
@@ -39,7 +39,7 @@ v8 = strcmp(v7, "bW9lY3Rme1kwdV9DNG5fRzAwZF9BdF9CNDVlNjQhIX0=");
 
 直接猜测字符串是目标 `flag` 的 Base64 加密形式，CyberChef 解码后得到 `flag`。这是容易的，略去截图。
 
-## catch
+## catch ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{S4m3_Tr1ck_with_@flower_desuwa}`
@@ -60,7 +60,7 @@ v8 = strcmp(v7, "bW9lY3Rme1kwdV9DNG5fRzAwZF9BdF9CNDVlNjQhIX0=");
 
 不过，关于具体的原理，星澜音也是一知半解。总之在后文中我们找到 `zbrpgs{F4z3_Ge1px_jvgu_@sybjre_qrfhjn}`，用凯撒密码的方法 ROT 几下就弄出来 `flag` 了。
 
-## upx
+## upx ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Y0u_c4n_unp4ck_It_vvith_upx}`
@@ -253,7 +253,7 @@ The flag is: moectf{Y0u_c4n_unp4ck_It_vvith_upx}
 
 哎。😭
 
-## ez3
+## ez3 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Y0u_Kn0w_z3_S0Iv3r_N0w_a1f2bdce4a9}`
@@ -432,7 +432,11 @@ PS S:\MoeCTF\Reverse\ez3> python .\solve_flag_z3.py
 
 舒服了😋至于题目所说的可能出现的多解情况🤔至少星澜音没碰到，那就不管了😋
 
-## flower
+## ezandroid ✅
+
+回头补。JADX 一把梭其实就出了😋
+
+## flower ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{f0r3v3r_JuMp_1n_7h3_a$m_a9b35c3c}`
@@ -726,7 +730,181 @@ PS S:\MoeCTF\Reverse\flower> python .\flower_crack.py
 
 肉眼分辨都知道 `40` 不行，那就是 `41` 了。`flag` 获得成功~
 
-## ezpy
+## 2048_master_re ✅
+
+给我去对面 Crypto 去😡我总想着能绕到程序自己的解密逻辑，但是 x64dbg 咋用咋不顺手，半天不会操作。我晕了。
+
+```python
+# xxtea_analysis.py
+# 翻译并复现了 decompiled 的两个函数（近似 XXTEA / Block-TEA 变体）。
+# 注：务必在 Python 3 下运行。
+
+def u32(x): return x & 0xFFFFFFFF
+
+# ------ sub_140001070 的 Python 近似复现 ------
+def sub_140001070_py(a2, a3_mem):
+    # a2: list of two uint32s (low, high)
+    # a3_mem: list of (>=4) uint32s representing memory at &n2 ... (we must provide correct stack words)
+    v3 = a2[0]
+    v4 = u32(-957401312)
+    result = a2[1]
+    v6 = 3337565984
+    n2 = int(a3_mem[0])  # a3_mem[0] 用作循环计数（在原主程序这里是 2）
+    while n2:
+        v9 = u32(v4 + a3_mem[(v6 >> 11) & 3])
+        v10 = u32(v4 + 1640531527)
+        v11 = u32(result - (v9 ^ (v3 + ((16 * v3) ^ (v3 >> 5)))))
+        v12 = u32(v3 - ((v10 + a3_mem[v10 & 3]) ^ (v11 + ((16 * v11) ^ (v11 >> 5)))))
+        v13 = u32((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v12 + ((16 * v12) ^ (v12 >> 5))))
+        v10 = u32(v10 + 1640531527)
+        v14 = u32(v11 - v13)
+        v15 = u32(v12 - ((v10 + a3_mem[v10 & 3]) ^ (v14 + ((16 * v14) ^ (v14 >> 5)))))
+        v16 = u32((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v15 + ((16 * v15) ^ (v15 >> 5))))
+        v10 = u32(v10 + 1640531527)
+        v17 = u32(v14 - v16)
+        v18 = u32(v15 - ((v10 + a3_mem[v10 & 3]) ^ (v17 + ((16 * v17) ^ (v17 >> 5)))))
+        v19 = u32(v10 + a3_mem[(v10 >> 11) & 3])
+        v10 = u32(v10 + 1640531527)
+        v20 = u32(v17 - (v19 ^ (v18 + ((16 * v18) ^ (v18 >> 5)))))
+        v21 = u32(v18 - ((v10 + a3_mem[v10 & 3]) ^ (v20 + ((16 * v20) ^ (v20 >> 5)))))
+        v22 = u32((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v21 + ((16 * v21) ^ (v21 >> 5))))
+        v10 = u32(v10 + 1640531527)
+        v23 = u32(v20 - v22)
+        v24 = u32(v21 - ((v10 + a3_mem[v10 & 3]) ^ (v23 + ((16 * v23) ^ (v23 >> 5)))))
+        v25 = u32((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v24 + ((16 * v24) ^ (v24 >> 5))))
+        v10 = u32(v10 + 1640531527)
+        v26 = u32(v23 - v25)
+        v27 = u32(v24 - ((v10 + a3_mem[v10 & 3]) ^ (v26 + ((16 * v26) ^ (v26 >> 5)))))
+        v28 = u32(v10 + a3_mem[(v10 >> 11) & 3])
+        v10 = u32(v10 + 1640531527)
+        v29 = u32(v26 - (v28 ^ (v27 + ((16 * v27) ^ (v27 >> 5)))))
+        v30 = u32(v27 - ((v10 + a3_mem[v10 & 3]) ^ (v29 + ((16 * v29) ^ (v29 >> 5)))))
+        v31 = u32((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v30 + ((16 * v30) ^ (v30 >> 5))))
+        v10 = u32(v10 + 1640531527)
+        v32 = u32(v29 - v31)
+        v33 = u32(v30 - ((v10 + a3_mem[v10 & 3]) ^ (v32 + ((16 * v32) ^ (v32 >> 5)))))
+        v34 = u32((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v33 + ((16 * v33) ^ (v33 >> 5))))
+        v10 = u32(v10 + 1640531527)
+        v35 = u32(v32 - v34)
+        v36 = u32(v33 - ((v10 + a3_mem[v10 & 3]) ^ (v35 + ((16 * v35) ^ (v35 >> 5)))))
+        v37 = u32(v10 + a3_mem[(v10 >> 11) & 3])
+        v10 = u32(v10 + 1640531527)
+        v38 = u32(v35 - (v37 ^ (v36 + ((16 * v36) ^ (v36 >> 5)))))
+        v39 = u32(v36 - ((v10 + a3_mem[v10 & 3]) ^ (v38 + ((16 * v38) ^ (v38 >> 5)))))
+        v40 = u32((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v39 + ((16 * v39) ^ (v39 >> 5))))
+        v10 = u32(v10 + 1640531527)
+        v41 = u32(v38 - v40)
+        v42 = u32(v39 - ((v10 + a3_mem[v10 & 3]) ^ (v41 + ((16 * v41) ^ (v41 >> 5)))))
+        v43 = u32((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v42 + ((16 * v42) ^ (v42 >> 5))))
+        v10 = u32(v10 + 1640531527)
+        v44 = u32(v41 - v43)
+        v45 = u32(v42 - ((v10 + a3_mem[v10 & 3]) ^ (v44 + ((16 * v44) ^ (v44 >> 5)))))
+        v46 = u32(v44 - ((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v45 + ((16 * v45) ^ (v45 >> 5)))))
+        v10 = u32(v10 + 1640531527)
+        v47 = u32(v45 - ((v10 + a3_mem[v10 & 3]) ^ (v46 + ((16 * v46) ^ (v46 >> 5)))))
+        v48 = u32((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v47 + ((16 * v47) ^ (v47 >> 5))))
+        v10 = u32(v10 + 1640531527)
+        v49 = u32(v46 - v48)
+        v50 = u32(v47 - ((v10 + a3_mem[v10 & 3]) ^ (v49 + ((16 * v49) ^ (v49 >> 5)))))
+        v51 = u32((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v50 + ((16 * v50) ^ (v50 >> 5))))
+        v10 = u32(v10 + 1640531527)
+        v52 = u32(v49 - v51)
+        v53 = u32(v50 - ((v10 + a3_mem[v10 & 3]) ^ (v52 + ((16 * v52) ^ (v52 >> 5)))))
+        result = u32(v52 - ((v10 + a3_mem[(v10 >> 11) & 3]) ^ (v53 + ((16 * v53) ^ (v53 >> 5)))))
+        v4 = u32(v10 + 1640531527)
+        v3 = u32(v53 - ((v4 + a3_mem[v4 & 3]) ^ (result + ((16 * result) ^ (result >> 5)))))
+        n2 -= 1
+    a2[0] = v3
+    a2[1] = result
+    return a2
+
+# ------ sub_1400015E0 的 Python 复现（加密） ------
+def sub_1400015E0_py(a1_words, a3_key):
+    # a1_words: list of 10 uint32 (plaintext), will be transformed in place (encryption)
+    v3 = a1_words[9]
+    v4 = 0
+    v5 = a1_words[8]
+    v6 = a1_words[1]
+    v7 = a1_words[2]
+    v8 = a1_words[3]
+    v9 = a1_words[4]
+    v10 = a1_words[5]
+    v11 = a1_words[6]
+    v12 = a1_words[0]
+    v13 = a1_words[7]
+    v27 = v5
+    v22 = v3
+    n11 = 11
+    while True:
+        v25 = u32(v4 - 1640531527)
+        idx = ((v4 - 1640531527) >> 2) & 3
+        v14 = a3_key[idx]
+        v21 = u32(v12 + ((((16 * v3) ^ (v6 >> 3)) + ((v3 >> 5) ^ (4 * v6))) ^ (((v4 - 1640531527) ^ v6) + (v14 ^ v3))))
+        v15 = a3_key[idx ^ 1]
+        v6 = u32(v6 + ((v21 ^ v15) + ((v4 - 1640531527) ^ v7) ^ (((16 * v21) ^ (v7 >> 3)) + ((v21 >> 5) ^ (4 * v7)))))
+        v16 = (idx ^ 3)
+        v17 = a3_key[idx ^ 2]
+        v7 = u32(v7 + ((v6 ^ v17) + (v25 ^ v8) ^ (((16 * v6) ^ (v8 >> 3)) + ((v6 >> 5) ^ (4 * v8)))))
+        v8 = u32(v8 + ((v25 ^ v9) + (v7 ^ a3_key[v16]) ^ (((16 * v7) ^ (v9 >> 3)) + ((v7 >> 5) ^ (4 * v9)))))
+        v9 = u32(v9 + ((v8 ^ v14) + (v25 ^ v10) ^ (((16 * v8) ^ (v10 >> 3)) + ((v8 >> 5) ^ (4 * v10)))))
+        v10 = u32(v10 + ((v9 ^ v15) + (v25 ^ v11) ^ (((16 * v9) ^ (v11 >> 3)) + ((v9 >> 5) ^ (4 * v11)))))
+        v18 = u32((v10 ^ v17) + (v25 ^ v13))
+        v4 = v25
+        v11 = u32(v11 + (v18 ^ (((16 * v10) ^ (v13 >> 3)) + ((v10 >> 5) ^ (4 * v13)))))
+        v13 = u32(v13 + ((v11 ^ a3_key[v16]) + (v25 ^ v27) ^ (((16 * v11) ^ (v27 >> 3)) + ((v11 >> 5) ^ (4 * v27)))))
+        v27 = u32(v27 + ((v13 ^ v14) + (v25 ^ v22) ^ (((16 * v13) ^ (v22 >> 3)) + ((v13 >> 5) ^ (4 * v22)))))
+        v3 = u32((((v27 ^ v15) + (v25 ^ v21)) ^ (((16 * v27) ^ (v21 >> 3)) + ((v27 >> 5) ^ (4 * v21)))) + v22)
+        n11 -= 1
+        v22 = v3
+        if n11 == 0:
+            break
+        v12 = v21
+    a1_words[0] = v21
+    a1_words[1] = v6
+    a1_words[2] = v7
+    a1_words[3] = v8
+    a1_words[4] = v9
+    a1_words[5] = v10
+    a1_words[6] = v11
+    a1_words[7] = v13
+    a1_words[8] = v27
+    a1_words[9] = v3
+    return a1_words
+
+# ------ 示例：尝试派生 key 并用标准 XXTEA 解密尝试（仅做对比） ------
+if __name__ == "__main__":
+    # given constants v15 from binary (target ciphertext)
+    v15 = [1566723124, (-2044068179) & 0xFFFFFFFF, (-1659816037) & 0xFFFFFFFF, (-53136879) & 0xFFFFFFFF,
+           1175413710, (-981373336) & 0xFFFFFFFF, (-28114771) & 0xFFFFFFFF, 167777774, (-1744380997) & 0xFFFFFFFF, (-280353208) & 0xFFFFFFFF]
+
+    # initial 64-bit constant in binary
+    n2_2 = 0xD0FCC6A7B8941CAF
+    a2 = [n2_2 & 0xFFFFFFFF, (n2_2 >> 32) & 0xFFFFFFFF]
+
+    # we must supply a3_mem (stack words that sub_140001070 reads). Original code passes &n2,
+    # and n2 was 2; but the function reads 4 dwords at that address -> they come from stack.
+    # Reasonable simplifying assumption (used in my test): [2, 2, 2, 2]
+    a3_mem = [2, 2, 2, 2]
+
+    derived = sub_140001070_py(a2, a3_mem)
+    print("derived n2 words:", derived, "combined hex:", hex((derived[1]<<32)|derived[0]))
+
+    # build key guess: [derived.low, derived.high, 0x12345678, n5]
+    a3_key = [derived[0], derived[1], 0x12345678, ( -1698898192 ) & 0xFFFFFFFF]
+    print("key guess words:", [hex(x) for x in a3_key])
+
+    # try to XXTEA-decrypt using this key (note: I also tried a proper XXTEA routine offline)
+    # But because real stack words read by sub_140001070 may differ, this guess may not yield printable plaintext.
+    print("ciphertext words (v15):", v15)
+```
+
+## A cup of tea ✅
+
+谁把我 Delta 改了😡😡
+
+找一个 TEA 加密算法的视线，把 Delta 改成反编译之后题目里的 Delta 就行。这个题稍后补。
+
+## ezpy ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Y0u_Kn0W_pyc}`
@@ -764,7 +942,7 @@ if a != 1:
 
 一眼凯撒密码。直接注意到 `shift` 为 114514，我们熟知 $10 \equiv 114,514 \pmod{26}$，所以以移位 10 去解密 `wyomdp{I0e_Ux0G_zim}` 即可。
 
-## have_fun
+## have_fun ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{H@v4_fUn}`
@@ -1213,7 +1391,7 @@ upx: 1.exe: CantUnpackException: file is possibly modified/hacked/protected; tak
 Unpacked 0 files.
 ```
 
-又到了我们喜闻乐见<sub>（存疑）</sub>的改壳环节。这个暂时不会，先跳过。
+又到了我们喜闻乐见<sub>（存疑）</sub>的改壳环节。主要是这文件我直接点也打不开😨和 GPT-5 商量半天，发现是哪个结构的大小有问题，反正改了一堆是能打开了，但是那个窗口过一会自己就没了……我看 UPX 结构差不多都在，死活想不来怎么脱壳；x64dbg 还是不顺手，只好放弃了。哎😭
 
 ## guess
 

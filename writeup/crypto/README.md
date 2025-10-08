@@ -6,7 +6,7 @@
 
 </div>
 
-## Crypto 入门指北
+## Crypto 入门指北 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{th1s_1s_y0ur_f1rst_ElG@m@l}`
@@ -382,7 +382,7 @@ $$
 
 从 $(s_{-1}, t_{-1})$ 和 $(s_0, t_0)$ 开始递推，我们必然能推出 $s_n$ 和 $t_n$，即一定存在这样的 $x, y$. 这即证明了 裴蜀定理.
 
-## ez_DES
+## ez_DES ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{_Ju5t envmEra+e.!}`
@@ -479,7 +479,7 @@ PS S:\MoeCTF\Crypto> python .\ez_des_brute_force.py
 👍 成功恢复 `flag`: moectf{_Ju5t envmEra+e.!}
 ```
 
-## baby_next
+## baby_next ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{vv0W_p_m1nu5_q_i5_r34l1y_sm4lI}`
@@ -802,7 +802,7 @@ q = 9835790642950870702456388102541833011851580184211232019829465812360043670916
 👀 解密得到的 `flag` 是 moectf{vv0W_p_m1nu5_q_i5_r34l1y_sm4lI}
 ```
 
-## ezBSGS
+## ezBSGS ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{18272162371285}`
@@ -984,7 +984,7 @@ p = 100000000000099
 `flag`: moectf{18272162371285}
 ```
 
-## ez_square
+## ez_square ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Ma7hm4t1c5_is_@_k1nd_0f_a2t}`
@@ -1181,7 +1181,7 @@ q 为 10407000088959425169419203940606545581520363832679548727898058943637902824
 😎 解密得到的 `flag` 是 moectf{Ma7hm4t1c5_is_@_k1nd_0f_a2t}
 ```
 
-## ez_AES
+## ez_AES ✅
 
 > [!NOTE]
 >
@@ -1196,7 +1196,7 @@ q 为 10407000088959425169419203940606545581520363832679548727898058943637902824
 >
 > 题目源文件（`ez_AES.py`）和解答脚本（`ez_AES_solver.py`）位于 [此处](../crypto/problems_and_solutions/ezAES/)。
 
-## ez_det
+## ez_det ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{D0_Y0u_kn0w_wh@7_4_de7erm1n@n7_1s!}`
@@ -1436,7 +1436,7 @@ candidate f as bytes (raw): b'moectf{D0_Y0u_kn0w_wh@7_4_de7erm1n@n7_1s!}'
 candidate flag (utf-8): moectf{D0_Y0u_kn0w_wh@7_4_de7erm1n@n7_1s!}
 ```
 
-## ezlegendre
+## ezlegendre ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Y0u_h@v3_ju5t_s01v3d_7h1s_pr0b13m!}`
@@ -1747,7 +1747,11 @@ Flag: moectf{Y0u_h@v3_ju5t_s01v3d_7h1s_pr0b13m!}
 ==============================
 ```
 
-## 沙茶姐姐的 Fufu
+## 杂交随机数 ❌
+
+卡在了一个诡异的地方。
+
+## 沙茶姐姐的 Fufu ✅
 
 > **题目描述**
 >
@@ -1767,39 +1771,69 @@ Flag: moectf{Y0u_h@v3_ju5t_s01v3d_7h1s_pr0b13m!}
 
 > [!NOTE]
 >
+> **FLAG:** `moectf{34765768752}`
+>
 > 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
 >
 > 简易的 0-1 背包问题。
 >
-> 题目解答脚本（`sandtea_fufu_solver.py`）位于 [此处](../crypto/problems_and_solutions/sandtea_fufu/)。
+> 题目输入文件（`in.txt`）和解答脚本（`sandtea_fufu_solver.py`）位于 [此处](../crypto/problems_and_solutions/sandtea_fufu/)。
 
-## Prime_in_prime
+## (半^3) 部电台 ❌
+
+又卡在了诡异的地方。
+
+## Ez_wiener ✅
 
 > [!NOTE]
+>
+> **FLAG:** `moectf{Ju57_@_5YmP1e_C0mm0n_Pr1me#!}`
+>
+> 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
+>
+> 简易的 Wiener 攻击。
+>
+> 题目源文件（`ez_wiener.py`）和解答脚本（`ez_wiener_solver.py`）位于 [此处](../crypto/problems_and_solutions/ez_wiener/)。
+
+## Prime_in_prime ✅
+
+> [!NOTE]
+>
+> **FLAG:** `moectf{Ju57_@_5YmP1e_C0mm0n_Pr1me#!}`
 >
 > 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
 >
 > 从 $N = 2 \times h \times g + 1$ 中计算出 $h$，引入 $h$ 以解出 $a$ 和 $b$，使用 $a$ 和 $b$ 计算出 $p$ 和 $q$，以计算 $\phi(N) = (p-1) \times (q-1)$，求出 $e$ 在模 $\phi(N)$ 下的逆元私钥 $d$，使用 $d$ 对 $\text{enc}$ 解密即可。
+>
+> 题目源文件（`prime_in_prime.py`）和解答脚本（`prime_in_prime_solver.py`）位于 [此处](../crypto/problems_and_solutions/prime_in_prime/)。
 
-## ez_lattice
+## ez_lattice ✅
 
 > [!NOTE]
+>
+> **FLAG:** `moectf{h0w_P0werfu1_7he_latt1ce_1s}`
 >
 > 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
 >
 > 该问题可化归为一个格（Lattice）中的 **最短向量问题（Shortest Vector Problem, SVP）**。通过使用 LLL 算法可以解决。本题使用了 SageMath 环境。
+>
+> 题目源文件（`ez_lattice.py`）和解答脚本（`ez_lattice_solver.py`）位于 [此处](../crypto/problems_and_solutions/ez_lattice/)。
 
-## happyRSA
+## happyRSA ✅
 
 > [!NOTE]
+>
+> **FLAG:** `moectf{rsa_and_s7h_e1se}`
 >
 > 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
 >
 > $$
 > \text{power\_tower\_mod}(a, k, m) \equiv 1 + \text{n\_phi} + \text{n\_phi}^2 \pmod{\text{n\_phi}^3}
 > $$
+>
+> 题目源文件（`happyrsa.py`）和解答脚本（`happyrsa_solver.py`）位于 [此处](../crypto/problems_and_solutions/happyRSA/)。
 
-## 神秘数字太多了
+## 神秘数字太多了 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{7718260004383}`
@@ -1872,12 +1906,24 @@ $$
 
 之后补充。
 
-## Legendre_revenge
+## ezHalfGCD ❌
+
+有一点思路，但不多😭
+
+## wiener++ ❌
+
+这个题我将主动放弃，因为我连 CTF Wiki 上讲的那一堆数学原理都理解不了。
+
+## Legendre_revenge ✅
 
 > [!NOTE]
 >
-> 题目中的 `Ledengre` 是 typo，在该 writeup 中已纠正。
+> 题目中的 `Ledengre` 似乎是 typo，在该 writeup 中已纠正。
+>
+> **FLAG:** `moectf{E@5Y_1eGendre_@nd_@ES*10}`
 >
 > 由于时间紧迫，本题目的详细 writeup 将于赛后补充。这里先提供简要思路：
 >
 > 题目将 $16 \times 2$ 个微比特信息打包成一个小于 $2^{16}$ 的整数 `key` 并用一个大模 $p$ 验证 `pow(key, 2*e, p_) == V`，所以 `key` 可穷举；另一端将最终的 32 字节用取模平方隐藏为 `text`，可以还原出 2 种候选根；剩下的就是按轮逆向：每个输出字节仅依赖一个 AES 加密输出字节和一位 `bit`，因此可以逐个字枚举候选并组合成 16 字节 `enc`、AES 解密检验并回溯 10 轮以得到原始 `flag`。
+>
+> 题目源文件（`legendre_revenge.py`）和解答脚本（`legendre_revenge_solver.py`）位于 [此处](../crypto/problems_and_solutions/legendre_revenge/)。

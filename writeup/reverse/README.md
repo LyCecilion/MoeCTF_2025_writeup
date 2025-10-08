@@ -6,7 +6,7 @@
 
 </div>
 
-## speed
+## speed ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Just_dyn@mic_d3bugg1ng}`
@@ -15,7 +15,7 @@
 
 ![使用动态调试固定窗口](./lock_window_via_dynamic_debugging.png)
 
-## 逆向工程入门指北
+## 逆向工程入门指北 ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{open_your_IDA_and_start_reverse_engineering!!}`

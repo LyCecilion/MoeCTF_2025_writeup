@@ -1,0 +1,1 @@
+flag = b"moectf{Ez_W1NNer_@AtT@CK!||}"

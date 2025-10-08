@@ -6,7 +6,7 @@
 
 </div>
 
-## 0 二进制漏洞审计
+## 0 二进制漏洞审计 ✅
 
 > [!NOTE]
 > 准确来说，是星澜音接触到 Pwn 领域的第 1 道题目！星澜音因为初入 Pwn，做第一道题已经是巨大的灾难，所有的工具（例如 Ghidra、IDA Pro 和 Pwntools）都是现学现用的，第 1 道题快给星澜音卡死了😭不过这道题真的让星澜音收获满满，星澜音因为这道题，弄懂了一个之前百思不得其解的问题，收获巨大😋！
@@ -259,10 +259,10 @@ __int64 __fastcall bypass(__int64 a1)
 
 对于本题的 `pwn` 程序而言，它也感受不到自己正在和网络交互，它只是通过 `read` 函数，从标准输入里读取数据罢了。通过网络套接字传输的数据是没有「行缓冲」这种概念的：你 `send` 了什么，它就 `read` 什么；这就够了。
 
-## 1 ez_u64
+## 1 ez_u64 ✅
 
 > [!NOTE]
-> **FLAG:** `moectf{uSEfUl_thlNgs_1n-pwNTO0156775935f}`
+> **FLAG:** `moectf{uSEfUl_thlNgs_1n-pwNTO0156775935f}`，后面可能是随机的。
 
 继续打开 IDA Pro 逆向。首先定位到 `main` 函数如下：
 
@@ -374,7 +374,10 @@ moectf{uSEfUl_thlNgs_1n-pwNTO0156775935f}
 [*] Closed connection to 127.0.0.1 port 13580
 ```
 
-## 1 find it
+## 1 find it ✅
+
+> [!NOTE]
+> **FLAG:** `moectf{F1Nd-ThE-HIDDEN-Fd33514761996}`，后面可能是随机的。
 
 打开 IDA Pro 分析题目给定的 `pwn` 文件，我们先定位到 `main` 函数：
 
@@ -426,7 +429,7 @@ moectf{F1Nd-ThE-HIDDEN-Fd33514761996}
 
 不过事实上，对于第一个问题，回答 `0`、`2` 和 `3` 似乎都是可行的😋反正无论如何都得输出，随便输出到哪，我们都能看见。
 
-## 2 EZtext
+## 2 EZtext ✅
 
 > [!NOTE]
 > 虽说是 `EZtext`，但对于星澜音这种纯粹的新手而言并不 easy……星澜音又花了整整一天时间弄懂这道题背后的全部逻辑……😭😭不过的确还好：星澜音第一次学会诸如堆栈结构、函数调用之类的东西，其实也应当算是收获满满了w——
@@ -1132,7 +1135,7 @@ exit
 
 至于我们 `exit` 之后程序会怎么走，这其实已经不重要了。事实上，我们仍然没有为程序指定一个 `system` 之后的返回地址，但鉴于我们已经拿到了 `flag`，再多的段错误也已经和我们无关了。
 
-## 2 ezshellcode
+## 2 ezshellcode ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{P0wERfuI_SHE1Ic0de_C@n-Do-ANyThING3180}`
@@ -1368,7 +1371,7 @@ $
 
 如此优雅地结束了。另外，Pwntools 的 [文档](https://docs.pwntools.com/en/stable/shellcraft/amd64.html) 中记述了更多这样的用法。
 
-## 3 认识 libc
+## 3 认识 libc ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{you_jUst_have-1ibc-now3ba4a04ec}`
@@ -1640,7 +1643,7 @@ EOFError
 [*] Process '/mnt/s/MoeCTF/Pwn/easylibc/pwn' stopped with exit code -8 (SIGFPE) (pid 5266)
 ```
 
-## boom / boom_revenge
+## boom / boom_revenge ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{IaST-TIMe_Tim3_is_5Pe3DIng-up3f68b}` / `moectf{No_pl3@5E-stOp_1-surreNDEra0c564f}`，后面可能是随机的。
@@ -1756,7 +1759,7 @@ io.interactive()
 
 `PAYLOAD += p64(0x40101a)` 是经验主义的 `ret`。总之能跑起来就行。但星澜音还是想吐槽：**一秒变一次到底是谁的主意** 😡 星澜音运行了 26 次才成功 👊
 
-## fmt
+## fmt ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{the-bEGiNn1Ng-Of-fOrmAt4345abe51}`，后面可能是随机的。
@@ -1817,6 +1820,7 @@ unsigned __int64 __fastcall generate(__int64 a1, unsigned __int64 i_1)
 > 如果我们能控制格式化字符串，含有各种格式说明符（形如 `%s`，`%p`），并且不提供后续参数，程序会从哪里找来一个「虚空」参数？这可能导致意想不到的结果！
 <!---->
 > [!TIP]
+>
 > 关于 `printf()` 这种行为，详细的原理在后面的 `fmt_S` 题目 writeup 中给出了说明。<br/>
 > ~~因为 `fmt_S` 的 writeup 写得比较早~~
 
@@ -1928,9 +1932,7 @@ Breakpoint 1, 0x0000555555555485 in main ()
 00:0000│ rsp 0x7fffffffd5f0 ◂— 0x100000
 ```
 
-它表明栈顶指针 `rsp` 指向这里，这里存放的值是 `0x100000`，在后续会被第 6 个 `%p` 打印。
-
-然后是第 2 行：
+它表明栈顶指针 `rsp` 指向这里，这里存放的值是 `0x100000`，在后续会被第 6 个 `%p` 打印。然后是第 2 行：
 
 ```plain
 01:0008│-088 0x7fffffffd5f8 —▸ 0x5555555592a0 ◂— 0x7254616f74 /* 'toaTr' */
@@ -2016,15 +2018,13 @@ Not that one.
 [Inferior 1 (process 6426) exited normally]
 ```
 
-怎么又坠机了😭气死我了😡😡
-
-突然发现第二次输入的时候不需要倒序了，因为这里处理 `%s` 时，`printf()` 会将第 7 个参数当做一个地址，跳转过去，从那里逐字节读取，直到遇到 `\0` 为止，这一次它是正向的😡😡啊呀，气死我了😡😡😡
+怎么又坠机了😭气死我了😡😡突然发现第二次输入的时候不需要倒序了，因为这里处理 `%s` 时，`printf()` 会将第 7 个参数当做一个地址，跳转过去，从那里逐字节读取，直到遇到 `\0` 为止，这一次它是正向的😡😡啊呀，气死我了😡😡😡
 
 本题显然无需 Pwntools 脚本，我们直接 `nc` 上去拿 `flag` 即可。下面的内容不作说明了。
 
-突然发现这是 Pwn 的 writeup 的第 `2025` 行诶😱那星澜音就在这里许一个愿望吧：星澜音希望身边所有的朋友们永远幸福、永远快乐，身体健康、万事如意！希望身边的朋友们能够好好地守护值得守护的人，亦被他人所好好地守护；希望身边的朋友们能够在生活中遇到自己的心之所向（ 嗯……(\*/ω＼\*) 星澜音是这么想的，也会永远这么做的！）然后，然后，**一定要永远在一起**（对吗，对的对的！）这世上还是好人多，我们要坚信这一点（不对说这个干嘛）~~怎么给一行造了这么多东西~~
+> 突然发现这是 Pwn 的 writeup 的第 `2025` 行诶😱那星澜音就在这里许一个愿望吧：星澜音希望身边所有的朋友们永远幸福、永远快乐，身体健康、万事如意！希望身边的朋友们能够好好地守护值得守护的人，亦被他人所好好地守护；希望身边的朋友们能够在生活中遇到自己的心之所向（ 嗯……(\*/ω＼\*) 星澜音是这么想的，也会永远这么做的！）然后，然后，**一定要永远在一起**（对吗，对的对的！）这世上还是好人多，我们要坚信这一点（不对说这个干嘛）~~怎么给一行造了这么多东西~~
 
-## inject
+## inject ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{THis-I5-n0t_1ike_a-pwN_Ch4lI3Ngea5dee}`，后面可能是随机的。
@@ -2134,7 +2134,7 @@ unsigned __int64 ping_host()
 > [!TIP]
 > **P.S.:** 靶机连 `ping` 都没有😡😡疑似有点过于简陋了。
 
-## randomlock
+## randomlock ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{sUCh-4_FAk3_cHAoTlC_3Vl155fce72e}`，后面可能是随机的。
@@ -2273,7 +2273,7 @@ The random value 10 is: 1421
 
 😋 `nc` 直连拿 `flag` 即可。
 
-## str_check
+## str_check ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{M@YBe_tHis-1s-C-StR1Ng524479b6}`，后面可能是随机的。
@@ -2375,7 +2375,7 @@ moectf{M@YBe_tHis-1s-C-StR1Ng524479b6}
 
 结束😋
 
-## syslock
+## syslock ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{d0nT-ENC@PSUI@t3-My_5YscALl5a0ce49}`，后面可能是随机的。
@@ -2754,7 +2754,7 @@ $
 [*] Closed connection to 127.0.0.1 port 9542
 ```
 
-## xdulaker
+## xdulaker ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{6E-CAREfuL-0F-ThE-l@K31e12e3e16}`，后面可能是随机的。
@@ -2973,10 +2973,11 @@ io.interactive()
 
 大沙币零音被这道题卡了十几天，今天上线 debug 半天发现忘记给 `ret_addr` 换成 `real_ret_addr` 了😇😇😇这辈子真是被 CTF 给毁了你们知道吗。
 
-## ezpivot
+## easylibc ❌
 
-> [!NOTE]
-> `flag` 已丢失。
+星澜音没有找到一个可能的方法，能够在可行的有限步内泄露关于 `libc` 的足够多的信息😭
+
+## ezpivot ✅
 
 既然题目已经反复提示了「栈迁移」，那我们就直接开始运用。首先，仍然使用 IDA Pro 对 `pwn` 进行分析，看看 `main`：
 
@@ -3216,7 +3217,7 @@ do_system (line=0x404060 <desc> "") at ../sysdeps/posix/system.c:103
 
 能跑，拿 `flag`，结束。
 
-## ezprotection
+## ezprotection ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{Just-SoME-eAsY_pr0T3ct1ON87a0ccb2}`，后面可能是随机的。
@@ -3414,7 +3415,7 @@ time.sleep(0.1)
 p.interactive()
 ```
 
-## fmt_S
+## fmt_S ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{@DVANceD_leVEl_fMTcd5de62b61}`，后面可能是随机的。
@@ -3588,11 +3589,17 @@ time.sleep(1)
 io.interactive()
 ```
 
-## shellbox
+## fmt_T ❌
+
+> 越来越热 •「深入洞穴探险，到达熔火地狱。」
+
+那三次循环必有一次是跳板，但具体是哪一次呢……总之，星澜音没能找到一个合适的顺序来规划三次的内容；调用的下一个函数的栈帧是转瞬即逝的，金丝雀的监视是目不转睛的。星澜音的一切想法和举动，似乎都在众目睽睽之下？好可怕，这就是「熔火地狱」吗……
+
+## shellbox ✅
 
 > [!NOTE]
 >
-> 星澜音斩获 The First Blood（一血），但由于斩获时精神状态不佳，因此在提交 `flag` 后清除了与 Gemini 的聊天记录，并销毁了 `exploit.py`。在编写 writeup 时，星澜音已无法还原一杀做法。
+> 星澜音以 The First Blood 完成该题时状态不佳，因此在提交 `flag` 后清除了与 Gemini 的聊天记录，并销毁了 `exploit.py`。在编写 writeup 时，星澜音已无法还原一杀做法。
 >
 > 下面给出的为二杀做法，其基本思路应当与一杀相同，但在部分细节处理上可能有所偏差。星澜音在其中使用了 Pwntools 的自动化 ROP 构造等高级特性，当然手动构造亦是可行的。
 >
@@ -3839,7 +3846,7 @@ p.sendafter(b'>', stack_pivot_payload)
 
 # 发送垃圾数据，让 v5 增长直到循环退出
 for i in range(7): # v5 会从 3 增长到 9
-    p.sendafter(b'>', b'DryIcecc') # 远端环境现在知道零音喜欢的是谁了吧
+    p.sendafter(b'>', b'DryIcecc')
 
 # 此时循环会 break，main 函数返回，触发 ROP
 info("Stack pivot payload sent. Triggering ROP chain...")
@@ -3868,3 +3875,11 @@ moectf{IOvELY_X1-X1a0-Di4Nec146074f}
 ```
 
 「西…小电」？哦，那确实可爱😋感觉能和 XDSEC 娘坐一桌，但是百团大战的时候我没拿到的 XDSEC 娘贴纸在哪补？不是说第一次面试的时候补吗，我真生气了😡😡
+
+## No way to leak! ❌ <!---->
+
+星澜音后期沉迷舞萌，该题目未完成。😭
+
+## call_it ❌
+
+星澜音后期沉迷舞萌，该题目未完成。😭

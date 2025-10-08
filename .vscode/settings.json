@@ -5,6 +5,7 @@
         "Pwn",
         "Crypto",
         "Misc",
-        "Web"
+        "Web",
+        "Reverse"
     ]
 }

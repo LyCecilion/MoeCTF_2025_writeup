@@ -2,6 +2,8 @@
 
 <div align="center">
 
+/// 该版本为 XDSEC 审核版本 ///
+
 ![MoeCTF 宣传图](./assets/moectf.jpg)
 
 **✨ 为 [星澜音](https://github.com/stellalyRin)

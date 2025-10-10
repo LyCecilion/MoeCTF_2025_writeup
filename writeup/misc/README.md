@@ -83,6 +83,8 @@ moectf{Y0u_4re_a_2048_m4st3r!!!!r0erowhu}
 > [!TIP]
 > 本题亦有邪道做法，不过星澜音没研究出来。
 
+至于那个剩下的 `sub_401E38`，有什么用呢🤔我们 [下回分解](../reverse/README.md)。
+
 ## Misc 入门指北 ✅
 
 > [!NOTE]

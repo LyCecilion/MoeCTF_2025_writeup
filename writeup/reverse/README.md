@@ -46,8 +46,8 @@ v8 = strcmp(v7, "bW9lY3Rme1kwdV9DNG5fRzAwZF9BdF9CNDVlNjQhIX0=");
 
 注意到题目提示：
 
-> IDA pro 9.0 推出了针对 C++ exception 的优化</br>
-> 但是这并不意味着所有的 try catch 都能被正确反编译
+> IDA Pro 9.0 推出了针对 C++ Exception 的优化</br>
+> 但是这并不意味着所有的 `try-catch` 都能被正确反编译
 
 用 IDA Pro 打开 `catch.exe`，逐步分析得到 `sub_114514` 函数，分析逻辑发现 `flag` 是对 `geoi~lq~bcyUcyUkUlkaoUlfkmw` 作 XOR 的结果。这题还是太容易了，一顿操作猛如虎，解密一出——
 
@@ -58,7 +58,7 @@ v8 = strcmp(v7, "bW9lY3Rme1kwdV9DNG5fRzAwZF9BdF9CNDVlNjQhIX0=");
 > [!TIP]
 > 事实上这就是题目提示中所说到的，IDA Pro 在反编译 `try-catch` 时的缺陷。我们熟知编译器生成的异常处理依赖于 `.eh_frame` / `.gcc_except_table`，二者记录了 `try` 块的起始和结束地址、`catch` 块能捕获的异常类型信息以及 `catch` 块代码的起始地址（即 Landing Pad）。抛出异常时，控制流靠 unwind 表将执行权从抛出点送到某个 Landing Pad，由后者再调起 `__cxa_begin_catch` 并执行 `catch` 体，然后 `__cxa_end_catch`。但因为这种控制流不是普通的分支和调用，反编译器不具备过强的能力完整重建这类异常控制流，所以在遇到过于棘手的 `try-catch` 的时候，IDA Pro 就要开摆了。
 
-不过，关于具体的原理，星澜音也是一知半解。总之在后文中我们找到 `zbrpgs{F4z3_Ge1px_jvgu_@sybjre_qrfhjn}`，用凯撒密码的方法 ROT 几下就弄出来 `flag` 了。
+不过，关于具体的原理，星澜音也是一知半解，暂时没有完全弄明白。总之在 IDA View 的后文中我们找到 `zbrpgs{F4z3_Ge1px_jvgu_@sybjre_qrfhjn}`，用凯撒密码的方法 ROT 几下就弄出来 `flag` 了，大概异常控制流跳到这里了？
 
 ## upx ✅
 
@@ -434,14 +434,32 @@ PS S:\MoeCTF\Reverse\ez3> python .\solve_flag_z3.py
 
 ## ezandroid ✅
 
-回头补。JADX 一把梭其实就出了😋
+> [!NOTE]
+> **FLAG:** `moectf{android_Reverse_I5_easy}`
+
+![使用 jadx-gui 逆向 Android 程序](./reverse_android_program_using_jadx-gui.png)
+
+逆向 Android 哪家强？必须还得 `jadx-gui` 强。直接用 `jadx-gui` 打开 `app-release.apk`，在「源代码」中定位到 `com.example.ezandroid` 的 `MainActivity` 即可。瞪眼法可以看到第 29 行的 Base64 加密字符串 `bW9lY3Rme2FuZHJvaWRfUmV2ZXJzZV9JNV9lYXN5fQ==`，用 CyberChef 解密即可。题易分大😋 ~~这就是我们的逆向啊，真是逆逆又向向啊~~
+
+若要深究这段代码的逻辑——其实也没啥可圈可点的。无非初始化了一个输入框 `EditText` 用于接收用户输入、一个按钮 `Button` 用于触发检查、一个文本视图 `TextView` 用于显示结果。随后，用户在输入框内输入，当点击按钮时，去除用户输入的首尾空格后，调用 `base64Encode()` 方法对输入的文本进行 Base64 编码，并将编码结果与硬编码的那一段字符串进行比较：匹配成功就显示绿色的
+
+> correct
+
+匹配失败就显示红色的
+
+> incorrect<br>
+> Please re-enter
+
+试着装了一下，还真是！出题人诚不我欺啊😭
+
+![手动安装 `ezandroid`](./manually_install_ezandroid.jpeg)
 
 ## flower ✅
 
 > [!NOTE]
 > **FLAG:** `moectf{f0r3v3r_JuMp_1n_7h3_a$m_a9b35c3c}`
 
-出题人提示说 `flower` 中存在花指令，事实上的确如此：IDA Pro 在解析 `solve` 函数的时候报错 `positive sp has been found`。不过星澜音对着汇编代码看了半天，也没有盯出来哪里有问题，所以干脆直接开 Ghidra 吧！Ghidra 在处理花指令这一块似乎比 IDA Pro 好一点。
+出题人提示说 `flower` 中存在花指令，事实上的确如此：IDA Pro 在解析 `solve` 函数的时候报错 `positive sp has been found`。不过星澜音对着汇编代码看了半天，也没有盯出来哪里有问题，所以干脆直接开 Ghidra 吧！Ghidra 在处理花指令这一块似乎比 IDA Pro 好一点，这块的花指令，Ghidra 似乎直接干掉了😨
 
 ~~不过星澜音也遇到过花指令让 Ghidra 完全错乱的情况，甚至有一次反编译直接把 `main` 函数反编译不见了~~
 
@@ -515,7 +533,6 @@ void check(void)
 666 还有反动态调试，无敌了，还是看看 `solve` 吧。Ghidra 反编译 `solve` 异常顺畅，原因未知，反正能用就好。
 
 ```c
-
 /* solve(std::__cxx11::string) */
 
 void solve(string *param_1)
@@ -732,7 +749,104 @@ PS S:\MoeCTF\Reverse\flower> python .\flower_crack.py
 
 ## 2048_master_re ✅
 
-给我去对面 Crypto 去😡我总想着能绕到程序自己的解密逻辑，但是 x64dbg 咋用咋不顺手，半天不会操作。我晕了。
+> [!NOTE]
+> **FLAG:** `moectf{@_N1c3_cup_0f_XXL_te4_1n_2O48}`
+
+程序架构分析的上一部分在 [Misc 的 writeup](../misc/README.md) 里，这里便长话短说了。上回说到了 `StartAddress` 函数，说书人星澜音为读者留下一个悬念——那 `sub_401E38` 是何方神圣？嘿，别急，我们一同前去窥探一下。
+
+```c
+__int64 __fastcall sub_401E38(LPVOID lpThreadParameter)
+{
+    if ( !(unsigned __int8)sub_401DBF("flag.txt") )
+        return 0LL;
+    if ( (unsigned int)sub_401C83() )
+    {
+        MessageBoxA(
+            hWnd,
+            "It seems you've uncovered some clues, but they're not enough to unlock the deepest secrets.",
+            "sandtea",
+            0x30u);
+        return 1LL;
+    }
+    else
+    {
+        MessageBoxA(hWnd, "You have found the final secret of 2048! - sandtea", "Congratulations", 0x40u);
+        return 0LL;
+    }
+}
+```
+
+嘿咻咻，`final secret` 想必就是里层 `flag` 了。这感觉，简直就像是打 **Xaleid◆scopiX** 终于在血条耗尽前进了二阶段，打 **雪降り、メリクリ** 时成功调好遥控器进入愚人节谱一样。只是这 **Xaleid◆scopiX** 二阶段尚有大转圈糊脸，**今年も「雪降り、メリクリ」目指して頑張ります！！** 在进入愚人节片段前还有一段 Lv.l2 的休息片段一样，我们进入了这 `sub_401E38`，似乎也有点迷惑而无可适从。
+
+不妨再向下追踪一下：`sub_401DBF` 是一个极为病娇的函数，若当前目录下没有 `flag.txt` 就会直接结束进程，简直是舞萌圈的地雷女😱我们不看它。倒是这 `sub_401C83` 像是在正经办事的，那就继续跟踪：
+
+```c
+__int64 sub_401C83()
+{
+    size_t v1;                  // rax
+    char Str[136];              // [rsp+20h] [rbp-D0h] BYREF
+    unsigned __int64 i_1;       // [rsp+A8h] [rbp-48h] BYREF
+    char _2048master2048ma[32]; // [rsp+B0h] [rbp-40h] BYREF
+    void *Block;                // [rsp+D0h] [rbp-20h]
+    FILE *Stream;               // [rsp+D8h] [rbp-18h]
+    unsigned __int64 i;         // [rsp+E0h] [rbp-10h]
+    unsigned int v8;            // [rsp+ECh] [rbp-4h]
+
+    Stream = fopen("flag.txt", "r");
+    sub_428CB0(Stream, "%100s", Str);
+    fclose(Stream);
+    if (strlen(Str) != 37)
+        return 1LL;
+    strcpy(_2048master2048ma, "2048master2048ma");
+    v1 = strlen(Str);
+    Block = (void *)sub_401A81(Str, v1, _2048master2048ma, &i_1);
+    if (Block)
+    {
+        v8 = 0;
+        for (i = 0LL; i < i_1; ++i)
+        {
+            if (*((_BYTE *)Block + i) != byte_495280[i])
+                v8 = 1;
+        }
+        free(Block);
+        return v8;
+    }
+    else
+    {
+        sub_428D00("Encryption failed\n");
+        return 1LL;
+    }
+}
+```
+
+这下看懂了😋程序把 `flag.txt` 的内容读到 `Str` 里（`sub_428CB0` 当是 `fscanf` 的封装），然后检测 `Str` 的长度必须是 37 个字节，又用 `sub_401A81` 函数去对我们的 `Str` 和一个明文密钥 `"2048master2048ma"` 进行了神奇的加密操作，最后会将加密结果与硬编码的 `byte_495280` 逐字节比较。那好说了呀，直接看看 `sub_401A81`。但是这里面函数太多了，星澜音就不全放出来了，反正肉眼可见是 XXTEA 加密😋这还说啥啊，先去看看硬编码的密钥：
+
+```plain
+.rdata:0000000000495280 ; _BYTE byte_495280[64]
+.rdata:0000000000495280 byte_495280     db 35h, 79h, 77h, 0CCh, 1Bh, 13h, 41h, 34h, 0F9h, 0FFh
+.rdata:0000000000495280                                         ; DATA XREF: sub_401C83+F9↑o
+.rdata:000000000049528A                 db 9Fh, 91h, 0FFh, 5Bh, 94h, 78h, 86h, 2Ah, 0AFh, 0AEh
+.rdata:0000000000495294                 db 0D7h, 9Eh, 31h, 4Dh, 7Ah, 0C4h, 0A5h, 51h, 0D1h, 0D9h
+.rdata:000000000049529E                 db 6Eh, 44h, 18h, 52h, 86h, 1Bh, 42h, 8Ah, 0C9h, 63h, 18h dup(0)
+```
+
+提取一下：
+
+```plain
+357977CC1B134134F9FF9F91FF5B9478862AAFAED79E314D7AC4A551D1D96E441852861B428AC963
+```
+
+能忍住不用 CyberChef 的都是神人了😋这你都不一把梭……啊？
+
+![XXTEA 解密失败](./failed_to_decrypt_XXTEA.png)
+
+到底有多弱……为啥啊？看了半天，这就是 XXTEA 加密啊！逻辑啥的似乎也都对着……😭没招了，丢给雾雨了，雾雨刚开始也一头雾水，研究 2 分 20 秒后突然灵机一动——
+
+![雾雨关于魔改 XXTEA 的研究成果](./MARSER-s_research_on_modified_XXTEA’.png)
+
+谁又把我 `delta` 从 `0x9E3779B9` 换成 `0x3E9779B9` 了🤣🤣`A cup of tea` 的教训还没吃够啊。
+
+气笑了，遂请求雾雨写了个 Python 脚本，实现了自定义 `delta` 的 XXTEA 算法，雾雨还加了一堆给星澜音的注释 ~~呜呜呜雾雨你好温柔~~ 。运行成功且良好。
 
 ```python
 # xxtea_analysis.py
@@ -900,9 +1014,90 @@ if __name__ == "__main__":
 
 ## A cup of tea ✅
 
-谁把我 Delta 改了😡😡
+> [!NOTE]
+> **FLAG:** `moectf{h3r3_4_cuP_0f_734_f0R_y0U!!!!!!}`
 
-找一个 TEA 加密算法的视线，把 Delta 改成反编译之后题目里的 Delta 就行。这个题稍后补。
+怎么出题人这么喜欢魔改标准算法😡我又不是一眼盯帧，怎么知道哪里被偷天换日了？😭气抖冷，这个社会还能不能好了😭我们打 MoeCTF 的什么时候才能真正的站起来😭😭
+
+本来这里写了一大堆内容的，不过该交代的都在 `2048_master_re` 的 writeup 中交代完了。我们直接给出结论：`delta` 变成 `1131796`(DEC) 了，转成 HEX 就是 `0x114514`，哼哼啊啊啊啊啊啊啊啊啊
+
+![恶臭 delta](./beast_senpai-s_delta.png)
+
+劳役 Gemini 写一个自定义 `delta` 的 TEA 解密工具即可。网上应该有现成的，但不知道当时为啥星澜音没找到。反正自己 ~~让 AI~~ 写也不是啥困难事😋
+
+```python
+import struct
+
+# 从 IDA 中提取的硬编码密文 (v6)
+encrypted_data = [
+    2026214571 & 0xFFFFFFFF,
+    578894681 & 0xFFFFFFFF,
+    1193947460 & 0xFFFFFFFF,
+    -229306230 & 0xFFFFFFFF,
+    73202484 & 0xFFFFFFFF,
+    961145356 & 0xFFFFFFFF,
+    -881456792 & 0xFFFFFFFF,
+    358205817 & 0xFFFFFFFF,
+    -554069347 & 0xFFFFFFFF,
+    119347883 & 0xFFFFFFFF,
+    0 & 0xFFFFFFFF,
+]
+
+# 从 IDA 中提取的硬编码密钥 (v5)
+key = [
+    289739801 & 0xFFFFFFFF,
+    427884820 & 0xFFFFFFFF,
+    1363251608 & 0xFFFFFFFF,
+    269567252 & 0xFFFFFFFF,
+]
+
+
+def decrypt_tea_modified(v, k):
+    """
+    魔改版 TEA 解密函数
+    v: 长度为 2 的 list，包含两个 32 位无符号整数 (64 位数据块)
+    k: 长度为 4 的 list，包含四个 32 位无符号整数 (128 位密钥)
+    """
+    v0, v1 = v[0], v[1]
+
+    # 关键修改点：将 delta 替换为程序中使用的值
+    # delta = 0x9E3779B9  # 标准的 delta
+    delta = 1131796  # 魔改后的 delta (0x114514)
+
+    # 初始的 sum 值是 delta * 32 (加密过程 sum 累加了32次)
+    s = (delta * 32) & 0xFFFFFFFF
+
+    for _ in range(32):
+        # 解密过程是加密的逆运算，顺序和操作符都相反
+        # 解密 v1
+        v1 = (v1 - (((v0 << 4) + k[2]) ^ (v0 + s) ^ ((v0 >> 5) + k[3]))) & 0xFFFFFFFF
+        # 解密 v0
+        v0 = (v0 - (((v1 << 4) + k[0]) ^ (v1 + s) ^ ((v1 >> 5) + k[1]))) & 0xFFFFFFFF
+        # sum 递减
+        s = (s - delta) & 0xFFFFFFFF
+
+    return [v0, v1]
+
+
+decrypted_flag_bytes = b""
+
+# 密文数据有 10 个有效的 DWORD，所以循环 5 次，解密 5 个数据块
+for i in range(5):
+    # 每次取 2 个 DWORD 作为解密块
+    chunk = [encrypted_data[2 * i], encrypted_data[2 * i + 1]]
+
+    # 使用魔改版的解密函数
+    decrypted_chunk = decrypt_tea_modified(chunk, key)
+
+    # 将解密后的两个 DWORD 转换回字节并拼接
+    decrypted_flag_bytes += struct.pack("<L", decrypted_chunk[0])
+    decrypted_flag_bytes += struct.pack("<L", decrypted_chunk[1])
+
+# 尝试解码并打印，通常 flag 是可见字符，最后的空字节（null bytes）可以去除
+flag = decrypted_flag_bytes.strip(b"\x00").decode("utf-8")
+
+print(f"Decrypted Flag: {flag}")
+```
 
 ## ezpy ✅
 
@@ -1143,7 +1338,7 @@ if ( v6 < (__int64)(int)v5 )
 }
 ```
 
-也就是说，程序对用户输入的每个字符都与 `0x2A` 进行了异或运算 ~~为啥 MoeCTF 的异或这么多~~ 随后与 `aGeoiLqbj` 的字符串进行比较。我们在 IDA View 视图中定位 `aGeoiLqbj`：
+也就是说，程序对用户输入的每个字符都与 `0x2A` 进行了异或运算。~~为啥 MoeCTF 的异或这么多~~ 随后与 `aGeoiLqbj` 的字符串进行比较。我们在 IDA View 视图中定位 `aGeoiLqbj`：
 
 ```plain
 .rdata:00000001400033B8 aGeoiLqbj:                              ; DATA XREF: DialogFunc+14D↑o
@@ -1175,9 +1370,9 @@ if ( v6 < (__int64)(int)v5 )
 ## mazegame ✅
 
 > [!NOTE]
-> **FLAG** 的开头必须是 `moectf{ssddddwwddssddddssddssssddwwddwwddwwwwddddssssaassssaaaassaassaawwaawwwwaaaassddssaassddssssaaaassddddddwwwwddddssddddwwddwwaawwddddssssssssssssaaasssdddssssaassssaaaassaassaawwaawwwwaaaassddssaassddssssaaaassddddddwwwwddddssddddwwddwwaawwddddssssssssssssaaawawwwaassaawwaassaaaaaaaaaawwwwaassssssddddssssssdddddddddwwdddssddwwwdddsssdddddwwawwddddddddddddddddddddssddddddddwwwwawwwwwwwwdwwwwwwwwwwwaawwdwwwwwwwwwwdwwwwwwaaaasssssssssssssssssssssssssssssssssssssaaawwaaaaaaaaaaaaaaaaaaawwwddddddddwwddddddddddwwwawaawawwwwwwwwwwwwwddwwwwaassaawwaassaaaaaaaaaawwwwaawwddwwaawwdwwwdwwwwddddddddddssddddssssdsdssddssaassaaaawwaaaassssaaaaaawwddddwwwwaawwawaassdsssdd`，结尾必须是 `}`。
+> **FLAG** 的具体判断规则未知，但其开头必须是 `moectf{ssddddwwddssddddssddssssddwwddwwddwwwwddddssssaassssaaaassaassaawwaawwwwaaaassddssaassddssssaaaassddddddwwwwddddssddddwwddwwaawwddddssssssssssssaaasssdddssssaassssaaaassaassaawwaawwwwaaaassddssaassddssssaaaassddddddwwwwddddssddddwwddwwaawwddddssssssssssssaaawawwwaassaawwaassaaaaaaaaaawwwwaassssssddddssssssdddddddddwwdddssddwwwdddsssdddddwwawwddddddddddddddddddddssddddddddwwwwawwwwwwwwdwwwwwwwwwwwaawwdwwwwwwwwwwdwwwwwwaaaasssssssssssssssssssssssssssssssssssssaaawwaaaaaaaaaaaaaaaaaaawwwddddddddwwddddddddddwwwawaawawwwwwwwwwwwwwddwwwwaassaawwaassaaaaaaaaaawwwwaawwddwwaawwdwwwdwwwwddddddddddssddddssssdsdssddssaassaaaawwaaaassssaaaaaawwddddwwwwaawwawaassdsssdd`，结尾必须是 `}`。若题目要求 `flag` 为最短路径，则 `flag` 可能仅有一种情况，但星澜音未验证。
 
-使用 ~~群内大佬倾情赠送的 IDA Pro 9.0 学习版~~ 反编译 `moe_maze.exe` 并在下载后 24 小时内删除 IDA Pro，可以得到
+使用 ~~群内大佬倾情赠送的 IDA Pro 9.0 学习版~~ 反编译 `moe_maze.exe` ~~并在下载后 24 小时内删除 IDA Pro~~（ ~~骗你的我根本不删~~ ），可以得到
 
 ```c
 int __fastcall main(int argc, const char **argv, const char **envp)
@@ -1276,7 +1471,7 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 }
 ```
 
-我们注意到，程序内部并没有内置 `flag`，而 `flag` 是 `moectf{}` 包裹用户输入得到的……太坑了。根据实际游玩体验和 `ADSW` 推断这是一个迷宫游戏。事实上，星澜音中午刷 GitHub 的时候发现了一个神秘项目 [Maze Solver](https://github.com/LingerJAB/MazeSolver)，哈哈，这就派上用场了😋
+我们注意到，程序内部并没有内置 `flag`，而 `flag` 是用 `moectf{}` 包裹用户输入得到的……太坑了。根据实际游玩体验和 `ADSW` 推断这是一个迷宫游戏。事实上，星澜音中午刷 GitHub 的时候发现了一个神秘项目 [Maze Solver](https://github.com/LingerJAB/MazeSolver)，哈哈，这就派上用场了😋
 
 程序中大部分都是判断迷宫的逻辑，而我们只需要着重关注这一行
 
@@ -1373,9 +1568,6 @@ ssddddwwddssddddssddssssddwwddwwddwwwwddddssssaassssaaaassaassaawwaawwwwaaaassdd
 
 ## upx_revenge ❌
 
-> [!NOTE]
-> **FLAG:** `moectf{???}`
-
 直接脱壳，注意到
 
 ```plain
@@ -1391,7 +1583,22 @@ upx: 1.exe: CantUnpackException: file is possibly modified/hacked/protected; tak
 Unpacked 0 files.
 ```
 
-又到了我们喜闻乐见<sub>（存疑）</sub>的改壳环节。主要是这文件我直接点也打不开😨和 GPT-5 商量半天，发现是哪个结构的大小有问题，反正改了一堆是能打开了，但是那个窗口过一会自己就没了……我看 UPX 结构差不多都在，死活想不来怎么脱壳；x64dbg 还是不顺手，只好放弃了。哎😭
+又到了我们喜闻乐见<sub>（存疑）</sub>的改壳环节。主要是这文件我直接点也打不开啊？
+
+![无法打开附件](./failed_to_open_attachment.png)
+
+这事蛮诡异的。星澜音想着，要么是把架构改了、要么是改成普通用户态加载器拒绝加载了、要么给 Characteristics 加了 DLL 标志、要么是……哎，好乱啊。关键是 x64dbg 也打开不了这文件，说是 PE 文件损坏，但是 Detect It Easy 等一众软件说没问题，就特别诡异：甚至 Detect It Easy 还能识别出来 UPX 壳子：
+
+![UPX 壳的信息](./information_of_the_upx_shell.png)
+
+然后想着办法做了半天……啥用都没有😭后来突然灵机一动：`.rsrc` 节中，`PointToRawData = 0x2A00`、`SizeOfRawData = 0x600`，也就是说，这一节覆盖的文件范围是 `[0x2A00, 0x2A00 + 0x600) = [0x2A00, 0x3000)`。然而文件的实际 `FileSize = 0x2FFC`，也就是说文件丢了最后 4 个字节，系统拒载了🤣哎呀这下无语了，修修补补一下终于能打开了，弹出一个黝黑的控制台窗口，过了一会又自己消失了……
+
+> [!TIP]
+> **赛后补充：**
+>
+> 后来发现少的不是后 4 个字节……是那个 `"UPX!"` 标识符！补齐之后刚好文件大小对上了，就可以用 UPX 工具脱壳了😭😭哎，赛后诸葛亮来了😭气死我了😡
+
+UPX 工具还是没法一键脱壳，我找了半天也不知道到底给哪动了手脚。动态脱壳吧……又死活用不明白 x64dbg，下了断点之后运行程序，指令满世界乱跑😭我服了。转眼看到群内 bot 的消息，😯🌿，星纾钰 怎么把这题做出来了😨这到底是哪里来的隆鼻啊😱我跪了😭😭遂严肃放弃此题。这个没得喷，星澜音从小就不怎么玩游戏，修改器啥的也是没摸过，逆向不会做很正常吧（哭哭 ing）
 
 ## guess ✅
 
@@ -1410,7 +1617,7 @@ Unpacked 0 files.
 .text:140001A5A  call  near ptr loc_140001A5F+3 ; Call Procedure
 ```
 
-这其实是一个必然会发生的跳转：`ZF=1` 的时候会跳转，`ZF=0` 的时候也会跳转，那不是不论如何都会跳转？IDA Pro 在这里就会懵掉，所以我们只需要将 `1A5A` 和 `1A58` 右键 NOP 掉，然后再设置 `1A56` 为 Force Jump 即可。现在按 F5 就能愉快反编译了——
+这其实是一个必然会发生的跳转：`ZF = 1` 的时候会跳转，`ZF = 0` 的时候也会跳转，那不是不论如何都会跳转？IDA Pro 在这里就会懵掉：你问我 `yes or no`，可两者都是一样的结局，那我怎么选？（ ~~这种情况最好选 `or`~~ ）所以我们只需要将 `1A5A` 和 `1A58` 右键 NOP 掉，然后再设置 `1A56` 为 Force Jump 即可。现在按 F5 就能愉快反编译了——
 
 ```c
 int __fastcall main(int argc, const char **argv, const char **envp)
@@ -1491,7 +1698,7 @@ int __fastcall main(int argc, const char **argv, const char **envp)
 }
 ```
 
-为啥又来……哭泣了。直接定位到 `if (v21 == v16)`，一眼比较逻辑，估计是比较随机数和用户输入的，那么哪个是随机数呢？再往上一看，嘿
+为啥又来这么长一串……哭泣了。考虑到程序内肯定有一个比较的逻辑，那应该会出现双等号 `==`，只好一眼盯帧，恰好找到 `if (v21 == v16)` 😋 盲猜一手，估计是比较随机数和用户输入的，那么哪个是随机数呢？再往上一看，嘿
 
 ```c
 std::random_device::~random_device((std::random_device *)v18);
@@ -1516,20 +1723,486 @@ return 0;
 
 ## A simple program ✅
 
-稍后补。
+> [!NOTE]
+> **FLAG:** `moectf{Y0u_P4ssEd!!}`
+
+一顿操作猛如虎：
+
+```c
+int __cdecl main(int argc, const char **argv, const char **envp)
+{
+    HANDLE Thread; // eax
+    void *Thread_1; // esi
+    int *v5; // eax
+    char Str1[52]; // [esp+4h] [ebp-38h] BYREF
+
+    Thread = CreateThread(0, 0, StartAddress, 0, 0, 0);
+    Thread_1 = Thread;
+    if ( Thread )
+    {
+        WaitForSingleObject(Thread, 0xFFFFFFFF);
+        CloseHandle(Thread_1);
+    }
+    memset(Str1, 0, 0x32u);
+    sub_3210E0(std::cout, "plz input your flag: ");
+    std::istream::getline(std::cin, Str1, 50, 0);
+    if ( !strncmp(
+            Str1,
+            Str2,                                 // "moectf{this_is_a_flag}"
+            strlen(Str2)) )                       // "moectf{this_is_a_flag}"
+        v5 = sub_3210E0(std::cout, aCorrect);
+    else
+        v5 = sub_3210E0(std::cout, aWrong);
+    std::ostream::operator<<(v5, sub_321310);
+    return 0;
+}
+```
+
+这答案呼之欲出啊！`moectf{this_is_a_flag}`！诶别急，绝对有诈——输入到 `chall.exe` 都能报 `Wrong!`，问题果然没这么简单。但是程序看起来没问题啊……`strncmp` 就是比对了 `Str1` 和 `Str2` 啊…`Str2` 不就是这个明显的 `flag` 吗…奇怪🤔
+
+努力回忆一下 Web 第 22 章的 `rev`🤔坏了，照着那道题的经验，这道题的 `strncmp` 是不是也被人动手脚了？仔细一看，还真是——IAT Hooking！
+
+> [!TIP]
+>
+> IAT Hooking 本质上是一种在运行时修改内存中导入地址表（Import Address Table）的技术。当一个程序需要调用一个外部 DLL（例如本题中的 `msvcrt.dll`）里的函数（例如 `strncmp`）时，它并非写死函数地址，而是在自己的 `.idata` 段有一个指针列表，程序运行时，操作系统加载器会将 `strncmp` 等函数的真实地址写入表内。
+>
+> Pwn 赛道的部分题目中所是用到的 GOT overwrite 是原理相近的，或者说，GOT 和 IAT Hooking 是同一种思想的两种体现。不过前者是 Pwner 利用程序漏洞发起的攻击，而后者是开发者主动设计的功能。
+
+为何做出这样的判断呢？我们注意到 `Thread = CreateThread(0, 0, StartAddress, 0, 0, 0);` 中创建了一个线程 `StartAddress`，其功能非常局限：
+
+```c
+DWORD __stdcall StartAddress(LPVOID lpThreadParameter)
+{
+    Sleep(0x64u);
+    return 0;
+}
+```
+
+对，就是睡了一会，然后就没了🤔其实程序睡不睡对我们影响不大，但最有可能的一种猜想是，程序会「前狼假寐，盖以诱敌」，利用睡的时间偷偷完成 IAT Hooking😨这是恐怖的。不过它到底 Hook 成什么样了？至少星澜音能力不够，暂时不知道怎么从 IDA Pro 直接盯出结果。但是做 Pwn 的时候星澜音习惯用 `gdb` 了，大不了这一次也用动态调试试试。比较逻辑位于
+
+```asm
+.text:0032175F    call    ds:strncmp
+```
+
+打开 x32dbg，进行一个断点的下😋随后「调试(D)」>「高级」>「隐藏调试器 (PEB)」（不知道为啥，但是不这么做就会 `EXCEPTION_ACCESS_VIOLATION`），连按 F9 进入 `flag` 输入的逻辑，~~认真地~~ 随便输入一个 `flag` 后回车并在 x32dbg 中 F7 步进，紧盯 `EIP`（类比 `RIP`）中的地址——`00321510`！
+
+![使用 x32dbg 动态调试 IAT Hooking 的程序](./use_x32dbg_to_dynamically_debug_program_with_IAT_Hooking.png)
+
+用 IDA Pro 定位到这里，看到了逻辑
+
+```c
+int __cdecl sub_321510(const char *a1, char *Str2)
+{
+    const char *v3; // ecx
+    unsigned int n0x14; // edx
+
+    if ( Str2 != Str2 )                           // "moectf{this_is_a_flag}"
+        return dword_3250A0();
+    v3 = a1;
+    if ( strlen(a1) == 20 )
+    {
+        n0x14 = 0;
+        while ( *v3 == (v3[byte_3231A4 - a1] ^ 0x23) )
+        {
+            ++n0x14;
+            ++v3;
+            if ( n0x14 >= 0x14 )
+                return 0;
+        }
+    }
+    return 1;
+}
+```
+
+终于看懂了😭`a1` 大抵是 `flag`，要求必须 20 字节长；后面这串就有点诡异了🤔`v3` 是指向输入字符串中当前字符的指针，也就是 `a1 + i`（其中 `i` 是循环次数），所以 `(a1 + i)[byte_3231A4 - a1]` 等价于 `*( (a1 + i) + (byte_3231A4 - a1) )`。对这个式子使用加法结合律和加法交换律（这两个定律我们不证），可以发现 `a1` 和 `-a1` 抵消了，就变成了 `*(byte_3231A4 + i)`。哦哦哦，这下看懂了，就是从 `byte_3231A4` 中取第 `i` 个字节，并进行与 `0x23` 的异或，随后与输入进行比对。双击跟踪 `byte_3231A4`：
+
+```plain
+.rdata:003231A4 ; _BYTE byte_3231A4[24]
+.rdata:003231A4 byte_3231A4     db 4Eh, 4Ch, 46h, 40h, 57h, 45h, 58h, 7Ah, 13h, 56h, 7Ch
+.rdata:003231A4                                         ; DATA XREF: sub_321510+31↑o
+.rdata:003231AF                 db 73h, 17h, 2 dup(50h), 66h, 47h, 2 dup(2), 5Eh, 4 dup(0)
+```
+
+手动拆一下：
+
+```plain
+byte_3231A4 = [0x4E, 0x4C, 0x46, 0x40, 0x57, 0x45, 0x58, 0x7A, 0x13, 0x56, 0x7C, 0x73, 0x17, 0x50, 0x50, 0x66, 0x47, 0x02, 0x02, 0x5E]
+```
+
+CyberChef 一秒解。慢走不送~
 
 ## Two cups of tea ✅
 
-还是改了 Delta。
+> [!NOTE]
+> **FLAG:** `moectf{X7e4_And_xx7EA_I5_BeautifuL!!!!!}`
+
+愈挫愈勇，继续跟踪！根据前面的经验，大概率是改了 `delta`😋只可惜这道题……似乎更上一层楼了？毕竟是 **TWO** cups of tea 啊🤔那天晚上睡着的星澜音遇到大神托梦了，ta 悠悠地说：
+
+> 这题的加密，有两层，第一层是……
+
+然后闹铃就把星澜音吵醒了……😭看来还是得自己跟踪。这里星澜音将直接给出自顶向下的分析而非探究过程。
+
+首先先看到 `main` 函数，刚开始它在初始化部分变量：
+
+```c
+int __fastcall main(int argc, const char **argv, const char **envp)
+{
+    // ... 一些变量声明 ...
+    _DWORD v15[10]; // [rsp+40h] [rbp-C0h]
+    // ...
+    char Buffer[16]; // [rsp+90h] [rbp-70h] BYREF
+    // ...
+
+    // ↓ 这里是给变量赋值
+    v3 = 0LL;
+    n2 = 2LL;         // XTEA 密钥的第 1 部分 (低32位)
+    v11 = 0;          // XTEA 密钥的第 1 部分 (高32位) -> n2 是 64 位，所以 n2 = 2
+    n2_1 = 2;         // XTEA 密钥的第 3 部分
+    n5 = 5;           // XTEA 密钥的第 4 部分
+  
+    // ↓ 这是我们要解密的目标「魔法符文」
+    v15[0] = 1566723124;
+    v15[1] = -2044068179;
+    // ... (一共 10 个数字)
+    v15[9] = -280353208;
+
+    // ↓ 这是被 XTEA 加密的「小暗盒」里的数据
+    n2_2 = 0xD0FCC6A7B8941CAFuLL;
+```
+
+嗯…`n2`、`n2_1` 和 `n5` 加在一起组成了 `{2, 0, 2, 5}`，它们是打开小暗盒的 XTEA 钥匙。`v15` 是要解密的目标，是加密后的正确结果——我们的目标就是倒推出加密前它的样子。`n2_2` 是那个被锁住的小暗盒，里面藏着 XXTEA 咒语的前半部分。
+
+接下来——
+
+```c
+// ↓ 调用 XTEA 解密函数
+sub_140001070(argc, &n2_2, &n2);
+```
+
+程序调用 `sub_140001070` 来进行 XTEA 解密。解密之后的 `n2_2` 的值，就变成了 XXTEA 咒语的前两句（`K0` 和 `K1`），至于为何是前两句——不妨继续看下去。
+
+```c
+// ...
+char Buffer[16]; // [rsp+90h] [rbp-70h] BYREF
+// ...
+Stream = _acrt_iob_func(0);
+fgets(Buffer, 100, Stream); // ← 从这里读入最多 100 个字符
+n0x64 = strcspn(Buffer, "\n"); // ← 找输入的第一个换行符在哪里
+if ( n0x64 >= 0x64 )
+    sub_140001BE8(); // 长度太长就出错
+Buffer[n0x64] = 0; // ← 把换行符替换成字符串结束符 `\0`
+```
+
+前文的 `Buffer` 是放我们钥匙的托盘，不过它只有 16 字节大，而这个 `fgets` 竟然想拼命往里面写 100 字节的东西😱也就是说，小 `Buffer` 要被 `fgets` 大大的 `Stream` 填满了🥵🥵要满到溢出来了呢❤️😍
+
+不对，溢到哪？IDA Pro 里也能看到相应的结构：这 `Stream` 多出来的部分会溢出到 `Buffer` 后面的内存上，也就是 `v19` 和 `v20`！这俩是啥东西？先别急，继续看——紧接着，一个 `strcspn` 和 `Buffer[n0x64] = 0` 会检测我们输入的字符串中的换行符 `\n` 在哪里，并将其变为 `\0`。
+
+好的，我们现在来说 `v19` 和 `v20` 的事。在程序后文中有：
+
+```c
+    v16[0] = *(_OWORD *)Buffer; // 把 Buffer 的内容 (16 字节) 拷到 v16
+    v17 = v20;                 // 把溢出到 v20 的内容 (8 字节) 拷到 v16 后面
+    v16[1] = v19;                // 把溢出到 v19 的内容 (16 字节) 拷到 v16 后面
+
+    // ↓ 把 XTEA 解密的结果和两个固定值，作为 XXTEA 密钥
+    n2 = n2_2;         // K0, K1 (来自解密后的 n2_2)
+    n2_1 = 305419896;  // K2 (即 0x12345678)
+    n5 = -1698898192; // K3 (即 0x9ABCDEF0)
+
+    // ↓ 调用 XXTEA 加密函数
+    sub_1400015E0(v16, v6, &n2);
+```
+
+😱出题人的伟大之处啊……不由得赞叹两句。程序把溢出到 `v19` 和 `v20` 的内容拷贝到了 `v16` 之后，整理成了一个 40 字节的数组 `v16`，这是等待被加密的钥匙。而 `n2 = n2_2` 等三行，又把 `K0`、`K1` 和两个新的数字 `0x12345678` 和 `0x9ABCDEF0` 放在一起，组成了完整的 XXTEA 咒语，放在了 `&n2` 指向的内存里。随后程序调用 XXTEA 加密函数，这才把 `v16` 的内容加密了。
+
+```c
+// ...
+    n40 = -1LL;
+    do
+        ++n40;
+    while ( Buffer[n40] ); // 检查你原始输入的长度
+    if ( n40 == 40 ) // 长度必须是 40
+    {
+        while ( *(_DWORD *)((char *)v16 + v3 * 4) == v15[v3] ) // 逐个比较加密结果和魔法符文
+        {
+            if ( ++v3 >= 10 ) // 如果 10 个都一样
+            {
+                flag = (char *)&unk_1400032C0; // "Correct!"
+                goto LABEL_10;
+            }
+        }
+        flag = aFlag; // "Wrong!"
+    }
+    else
+    {
+        flag = (char *)&unk_140003298; // "Wrong length!"
+    }
+LABEL_10:
+    sub_140001010(flag); // 打印结果
+    return 0;
+}
+```
+
+紧接着程序检查输入长度，逐字节比较 `v16` 和预设的 `v15` 以验证 `flag`。至于 `sub_140001070` 作为 XTEA 的实现、和 `sub_1400015E0` 作为 XXTEA 的实现，其实它们虽然于标准算法有差异，但在数学上是等价的。例如，后者的逻辑中，从 `v4 = 0` 起，每轮的 `v4 = v4 - 0x61C88647` 在 32 位模加下等价于 `sum += 0x9E3779B9`，而后面的 MX 形式事实上也是等价于标准逻辑的，只是变量名和先后顺序不同而已。那就没什么问题了。
+
+压力 GPT-5 写一个 XTEA 和 XXTEA 联合解密脚本即可。
+
+```python
+#!/usr/bin/env python3
+import struct
+
+MASK32 = 0xFFFFFFFF
+DELTA = 0x9E3779B9
+
+
+def u32(x):
+    return x & MASK32
+
+
+def xtea_decrypt_block(v0, v1, k, rounds=32):
+    # k: list of 4 u32
+    sum_ = u32(DELTA * rounds)
+    for _ in range(rounds):
+        v1 = u32(v1 - (((v0 << 4 ^ (v0 >> 5)) + v0) ^ (sum_ + k[(sum_ >> 11) & 3])))
+        sum_ = u32(sum_ - DELTA)
+        v0 = u32(v0 - (((v1 << 4 ^ (v1 >> 5)) + v1) ^ (sum_ + k[sum_ & 3])))
+    return v0, v1
+
+
+def xxtea_mx(sum_, y, z, p, e, k):
+    # MX = (((z>>5 ^ y<<2) + (y>>3 ^ z<<4)) ^ ((sum ^ y) + (k[(p&3) ^ e] ^ z)))
+    return u32(((z >> 5) ^ (y << 2)) + ((y >> 3) ^ (z << 4))) ^ u32(
+        (sum_ ^ y) + (k[(p & 3) ^ e] ^ z)
+    )
+
+
+def xxtea_decrypt(v, k):
+    # v: list of n u32, k: list of 4 u32
+    n = len(v)
+    if n < 2:
+        return v[:]
+    rounds = 6 + (52 // n)  # for n=10 -> 11
+    sum_ = u32(rounds * DELTA)
+    y = v[0]
+    while rounds > 0:
+        e = (sum_ >> 2) & 3
+        for p in range(n - 1, 0, -1):
+            z = v[p - 1]
+            v[p] = u32(v[p] - xxtea_mx(sum_, y, z, p, e, k))
+            y = v[p]
+        z = v[n - 1]
+        v[0] = u32(v[0] - xxtea_mx(sum_, y, z, 0, e, k))
+        y = v[0]
+        sum_ = u32(sum_ - DELTA)
+        rounds -= 1
+    return v
+
+
+def to_u32_list_signed(nums):
+    # convert signed 32-bit ints to unsigned 32-bit
+    out = []
+    for x in nums:
+        if x < 0:
+            x = (x + (1 << 32)) & MASK32
+        out.append(x)
+    return out
+
+
+def main():
+    # Step 1: XTEA decrypt constant C with key [2,0,2,5]
+    C_lo = 0xB8941CAF
+    C_hi = 0xD0FCC6A7
+    K_seed = [0x00000002, 0x00000000, 0x00000002, 0x00000005]
+    K0, K1 = xtea_decrypt_block(C_lo, C_hi, K_seed, rounds=32)
+
+    # Step 2: XXTEA decrypt v15 with key [K0, K1, 0x12345678, 0x9ABCDEF0]
+    v15_signed = [
+        1566723124,
+        -2044068179,
+        -1659816037,
+        -53136879,
+        1175413710,
+        -981373336,
+        -28114771,
+        167777774,
+        -1744380997,
+        -280353208,
+    ]
+    v15 = to_u32_list_signed(v15_signed)
+    key_xx = [K0, K1, 0x12345678, 0x9ABCDEF0]
+
+    plain_words = xxtea_decrypt(v15[:], key_xx)
+    payload = struct.pack("<10I", *plain_words)
+
+    print("XTEA-derived key words (K0, K1): {:08x} {:08x}".format(K0, K1))
+    print("Payload (hex):", payload.hex())
+    try:
+        print("Payload (ascii, may contain non-printables):", payload.decode("ascii"))
+    except UnicodeDecodeError:
+        print("Payload contains non-ASCII bytes; write it raw to stdin.")
+    # Reminder: feed exactly 40 bytes, then a newline.
+    # For example:
+    # import sys; sys.stdout.buffer.write(payload + b"\\n")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+跑一个：
+
+```plain
+PS S:\MoeCTF\Reverse\teas> python .\teas_decryptor.py
+XTEA-derived key words (K0, K1): 63656f6d 21216674
+Payload (hex): 6d6f656374667b583765345f416e645f78783745415f49355f42656175746966754c21212121217d
+Payload (ascii, may contain non-printables): moectf{X7e4_And_xx7EA_I5_BeautifuL!!!!!}
+```
+
+那还说啥，没问题了😋只是说，人还是不能被经验主义所误导，~~差点以为谁又动我 `delta` 了~~
 
 ## ezandroid.pro ✅
 
-Native 层。容易的，只需要分析其 C 代码部分即可。
+> [!NOTE]
+> **FLAG:** `moectf{SM4_Android_I5_Funing!!!}`
+
+草，走，忽略🏃打开 `jadx-gui` 看看：
+
+```java
+package com.example.ezandroidpro;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
+
+/* loaded from: classes.dex */
+public class MainActivity extends AppCompatActivity {
+    private EditText inputEditText;
+    private TextView resultTextView;
+
+    public native boolean check(String str);
+
+    static {
+        System.loadLibrary("ezandroidpro");
+    }
+
+    @Override // androidx.fragment.app.FragmentActivity, androidx.activity.ComponentActivity, androidx.core.app.ComponentActivity, android.app.Activity
+    protected void onCreate(Bundle bundle) {
+        super.onCreate(bundle);
+        setContentView(R.layout.activity_main);
+        this.inputEditText = (EditText) findViewById(R.id.inputEditText);
+        this.resultTextView = (TextView) findViewById(R.id.resultTextView);
+        ((Button) findViewById(R.id.checkButton)).setOnClickListener(new View.OnClickListener() { // from class: com.example.ezandroidpro.MainActivity.1
+            @Override // android.view.View.OnClickListener
+            public void onClick(View view) {
+                String strTrim = MainActivity.this.inputEditText.getText().toString().trim();
+                if (strTrim.length() != 32) {
+                    MainActivity.this.resultTextView.setText("flag长度不对,请重新输入");
+                    MainActivity.this.resultTextView.setTextColor(MainActivity.this.getResources().getColor(android.R.color.holo_red_dark));
+                } else if (MainActivity.this.check(strTrim)) {
+                    MainActivity.this.resultTextView.setText("Congratulations!");
+                    MainActivity.this.resultTextView.setTextColor(MainActivity.this.getResources().getColor(android.R.color.holo_green_dark));
+                } else {
+                    MainActivity.this.resultTextView.setText("Incorrect");
+                    MainActivity.this.resultTextView.setTextColor(MainActivity.this.getResources().getColor(android.R.color.holo_red_dark));
+                }
+            }
+        });
+    }
+}
+```
+
+定睛细看：
+
+```java
+public native boolean check(String str);
+```
+
+哦哦哦，Native 层！这是个好东西啊😋
+
+> [!TIP]
+> 一个 Android 应用可被认为是一个「混合体」，包含一个 Java 层和一个 Native 层。
+>
+> 1. Java 层是我们通常编写 Android App 的代码，比如说我们现在分析的 `MainActivity.java`。这些 Java 或 Kotlin 代码被编译成 Dalvik 字节码（`.dex` 文件），运行在 安卓运行时（ART）这个虚拟机里。它是跨平台的，但毕竟运行在虚拟机里，对于一些计算密集型的任务，会造成极大的性能开销和损耗。
+> 2. Native 层是使用 C/C++ 编写的代码，这些代码被编译成针对特定 CPU 架构的机器码，打包成动态链接库文件（即我们接下来要分析的 `.so` 文件，Shared Object）。它开发复杂、不跨平台，但是没有虚拟机的开销，速度更快。
+>
+> 这两层通过 JNI（Java Native Interface）相互联结。JNI 是 Java 提供的一套标准接口，它允许运行在虚拟机里的 Java 代码和运行在机器上的 Native 代码相互调用。
+
+回到我们刚才的那一段代码：
+
+```java
+public native boolean check(String str);
+```
+
+`native` 是 Java 中的一个关键字，它表示这个方法仅在此处声明，但其实现（方法体）不在 Java 代码，而在外部的 Native 库中。即，它告诉虚拟机和编译器，请在别处找这个函数的实现。那么，去哪找？🤔注意到代码的 `static` 代码块中：
+
+```java
+static {
+    System.loadLibrary("ezandroidpro");
+}
+```
+
+哦哦哦，这下看懂了😋这个函数加载了 Native 库文件。它告诉 Android 系统：请去 APK 的 `lib` 目录里，找到 `libezandroidpro.so` 并加载到内存中。它仅在类加载的时候执行一次，确保在调用任何 `native` 方法前，对应的库文件已被加载。
+
+等等🤔为什么一定是 `libezandroidpro.so`？这其实是约定俗成的要求，系统寻找的 `.so` 文件，必须满足这样的命名规范
+
+> "lib" + 库名 + ".so"
+
+这便是了。我们使用 7-Zip 解压 `ezandroidpro.apk`，找到其 `/lib/` 下，看到了 `arm64-v8a` 和 `armeabi-v7a` 这两个不同架构的不同库。后者 0 人用😡我们定位到 `/lib/arm64-v8a/libezandroidpro.so`，用 IDA Pro 打开看看😋
+
+![`.so` 文件中的函数](./functions_in_so_file.png)
+
+为啥这么多函数？吓哭了😭但别急，函数的命名也是有规范的，简单来说，是
+
+> "Java\_" + 包名 + "\_" + 类名 + "\_" + 方法名
+
+对应本题的情况，即
+
+```plain
+Java_com_example_ezandroid_MainActivity_check
+```
+
+嘿，恰好找见了😋但是感觉出来的东西好乱……呜呜零音不看零音不想看😭往下找找，有一行
+
+```c
+sm4Encrypt(v21, v24, _moectf2025______);
+```
+
+小学生都能看懂这是在干啥😋至于后面这三个参数…先看第三个：
+
+```c
+strcpy((char *)_moectf2025______, " moectf2025!!!!!!");
+```
+
+所以 `_moectf2025______` 应该是 `" moectf2025!!!!!!"`，`v21` 和 `v24` 不知道，懒得看了，反正绝对有一个是用户输入。没提到 SM4 解密的工作模式，默认的话就是 ECB，先试试；打开 CyberChef 碰碰运气没碰出来，但是看到 `" moectf2025!!!!!!"` 前面那个迷惑空格🤔感觉没有，删掉后突然出 `flag` 了。可能 `sm4Encrypt` 内会删空格？谁知道，`flag` 拿到了就跑路了😋
+
+![使用 CyberChef 解密 SM4](./decrypt_sm4_using_CyberChef.png)
 
 ## rusty_sudoku ✅
 
 > [!NOTE]
-> 你说得对，但是「Rust」是由 Mozilla 自主研发的一款全新零开销抽象编程语言。语言发生在一个被称作「RAII」的资源管理世界，在这里，退出作用域的对象将被授予「drop」方法，回收资源之力。你将扮演一位名为「Ferris」的神秘角色在编码的旅行中邂逅形状各异、生命周期独特的变量们，和它们一起击败强大的编译错误，找回失散的内存安全——同时，逐步发掘「Servo」的真相。<br/>
+> 分千亿遗产时，律师突然问「谁写 Rust？」<br>
+> 坐拥千亿的爷爷去世了，就在家族齐聚准备分遗产时，律师突然沉声问道：「继承人中——有写 Rust 的吗？」<br>
+> 全场霎时死寂。<br>
+> 大伯猛地拍桌：「Rust？什么乱七八糟的！我女儿 Go 全框架精通，稀罕这？」<br>
+> 小姑揶揄道：「听说，染上 Rust，比染上毒品更吓人，咱家族不会真有人碰这玩意……」<br>
+> 二伯瞥向他儿子：「你小子没写过吧？」堂哥轻蔑一笑：「Rust？我 Python 都玩不明白，会看得上它？」<br>
+> 最后，所有目光落在我身上。我后背发凉，正想隐藏 VS Code 里的「#derive(Debug)」时，堂哥突然阴恻恻开口：「等等，你 GitHub 上，是不是发过什么 crates？」<br>
+> 我慌忙否认：「胡说什么！编程语言我顶多学过 TypeScript；Rust？狗都不写！」<br>
+> 他不依不饶，当场搜出一个 Ferris 的挂件逼问我：「那你说这是谁？」我忙答道：「这不是 Ferris，这是……」「Ferris？」整个大厅骤然响起一片倒抽冷气的声音。 我瞬间僵住——完了，TypeScript 哪来的 Ferris！<br>
+> 亲戚们脸上顿时浮出毫不掩饰的讥嘲，似乎在说「看，那个写 Rust 的 loser。」<br>
+> 谁知，律师却大步走向我，「啪」地朝我鞠躬道： 「根据遗嘱，您——尊贵的 Rust 信徒，将继承委托人全部财产，包括 56 亿现金、11 处房产与 3 家上市公司！」<br>
+> 全场炸了。大伯疯了一样揪住律师嘶吼：「你疯了！这合理吗？！玩个垃圾凭什么？」律师歪嘴一笑： 「就凭以下几条：<br>
+> 「1. 写 Rust，必是人中龙凤。能忍受编译错误狂喷一小时、与借用检查器斗智斗勇、世间再无挫折可将其击垮。<br>
+> 「2. 考公新规：写 Rust，笔试加 50 分。能理清多线程数据竞争、手写 Drop 实现、拥有极强极缜密的系统思维。<br>
+> 「3. 企业招人潜规则：有连续 30 天贡献 Rust 项目记录者直接录取。这代表无上的耐心、毅力、与编译器磨出来的强大心态。<br>
+> 「此外，高考政策：子女凭 Rust 项目 Star 数多少和 Pull Requests 合并数加分；购房补贴：写 Rust 者直接进入科技人才名单，分配北上广深户口及房产。」<br>
+> 我原本弯着的腰，一寸一寸地挺直。苍白的脸浮起血色，眼中射出前所未有的光芒。<br>
+> 接着，我一把扯开外套，露出印着「FIGHT AGAINST THE BORROW CHECKER」的 T 恤，声如洪钟：
+> 「现在谁还敢说——写 Rust 没出息？！」
+>
 > **FLAG:** `moectf{a8c79927d4e830c3fe52e79f410216a0}`
 
 竟然是我们喜闻乐见的 Rust😋直接打开 IDA Pro 展开逆向——不是这是啥啊……
